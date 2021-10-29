@@ -1,0 +1,36 @@
+#!/usr/bin/perl
+
+use URI;
+use strict;
+use warnings;
+use LWP::Simple;
+use LWP::UserAgent;
+
+my $cli = $ARGV[0];
+print "cli: $cli\n";
+my $uri = URI->new($ARGV[0]);
+
+printf "proto: %s\n", $uri->scheme;
+printf "host: %s\n", $uri->host;
+printf "path: %s\n", $uri->path;
+printf "full: %s\n", $uri->as_string;
+
+
+
+# Create a user agent object
+my $ua = LWP::UserAgent->new;
+$ua->agent("MyApp/0.1 ");
+
+# Create a request
+my $req = HTTP::Request->new(GET => $uri->as_string);
+
+# Pass request to the user agent and get a response back
+my $res = $ua->request($req);
+
+# Check the outcome of the response
+if ($res->is_success) {
+	print $res->content;
+}
+else {
+	print $res->status_line, "\n";
+}

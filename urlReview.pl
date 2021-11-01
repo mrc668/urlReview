@@ -25,10 +25,42 @@ sub logToDebug {
 	printf debugLog "-"x40 . "\n";
 } # logToDebug
 
+sub wellKnown {
+	my($host) = @_;
+	my $url = "";
+	my $ua = LWP::UserAgent->new((max_redirect=>0));
+	my @log=(q(wellKnown()));
+
+	for my $proto (qw(http https)) {
+		for my $dir (qw( wellknown .wellknown .)) {
+			for my $file (qw( .security .security.txt security.txt )) {
+				$url = sprintf("%s://%s/%s/%s",$proto,$host,$dir,$file);
+				push @log, "Checking " . $url;
+				my $req = HTTP::Request->new(GET => $url);
+				my $res = $ua->request($req);
+				if( $res->code == 200 ) {
+					my $content = $res->content;
+					print "security.txt\n";
+					print $content;
+					push @log, "security.txt";
+					push @log, $content;
+					logToDebug join("\n",@log);
+					return;
+				} # if
+			} # file
+		} # dir
+	} # proto
+
+	logToDebug join("\n", @log, "Failed to find security.txt on $host");
+	print "Failed to find security.txt on $host\n";
+
+	return;
+} # well known
+
 sub openURL {
 	my ($passedURL) =  @_;
 	my $uri = URI->new($passedURL);
-	my @log = ();
+	my @log = (qq(openURL($passedURL)));
 
 	#printf "proto: %s\n", $uri->scheme;
 	#printf "host: %s\n", $uri->host;
@@ -57,7 +89,10 @@ sub openURL {
 
 		# Check the outcome of the response
 		my $content = $res->content;
-		push @log, sprintf "Page content: %s", $content;
+		push @log, sprintf "Page content:\n%s", $content;
+		logToDebug join("\n",@log);
+
+		wellKnown($uri->host);
 
 	} elsif( $res->code == 301 ) {
 		printf "301 redirect to %s\n", $res->header("Location");
@@ -74,10 +109,7 @@ sub openURL {
 
 
 
-	logToDebug join("\n",@log);
 } # openURL()
 
-my $cli = $ARGV[0];
-print "cli: $cli\n";
-openURL($cli);
+openURL($ARGV[0]);
 

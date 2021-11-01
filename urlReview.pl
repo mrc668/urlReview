@@ -25,6 +25,39 @@ sub logToDebug {
 	printf debugLog "-"x40 . "\n";
 } # logToDebug
 
+sub detectWordPress {
+	my($host) = @_;
+	my @log=(q(detectWordPress()));
+	my $url = "";
+	my $ua = LWP::UserAgent->new((max_redirect=>0));
+
+	for my $proto (qw(http https)) {
+		for my $dir (qw( . wordpress wordPress WordPress Wordpress wp-admin WP-Admin WP-ADMIN )) {
+			for my $file (qw( . License.txt )) {
+				$url = sprintf("%s://%s/%s/%s",$proto,$host,$dir,$file);
+				my $req = HTTP::Request->new(GET => $url);
+				my $res = $ua->request($req);
+				push @log, "status " . $res->code . " " . $url;
+				if( $res->code == 200 ) {
+					print "may be WP, $url has content.\n";
+					push @log, "may be WP, $url has content.";
+					my $content = $res->content;
+					if( $content =~ m/WordPress/ ) {
+						print "$host seems to be a word press site.\n";
+						logToDebug join("\n",@log);
+						return;
+					} # if word press
+				} # if status 200
+			} # file
+		} # dir
+	} # proto
+
+	logToDebug join("\n", @log, "does not appear to be word press on $host");
+	print "does not appear to be word press on $host\n";
+
+	return;
+} # well known
+
 sub wellKnown {
 	my($host) = @_;
 	my $url = "";
@@ -93,8 +126,9 @@ sub openURL {
 		logToDebug join("\n",@log);
 
 		wellKnown($uri->host);
+		detectWordPress($uri->host);
 
-	} elsif( $res->code == 301 ) {
+	} elsif( $res->code == 301 || $res->code == 302 ) {
 		printf "301 redirect to %s\n", $res->header("Location");
 		push @log, "Location: " . $res->header("Location");
 		logToDebug join("\n",@log);

@@ -29,9 +29,9 @@ sub detectWordPress {
 	my($host) = @_;
 	my @log=(q(detectWordPress()));
 	my $url = "";
-	my $ua = LWP::UserAgent->new((max_redirect=>0));
+	my $ua = LWP::UserAgent->new(); # no reason to not follow redirect
 
-	for my $proto (qw(http https)) {
+	for my $proto (qw(https http)) {
 		for my $dir (qw( . wordpress wordPress WordPress Wordpress wp-admin WP-Admin WP-ADMIN )) {
 			for my $file (qw( . License.txt )) {
 				$url = sprintf("%s://%s/%s/%s",$proto,$host,$dir,$file);
@@ -61,10 +61,10 @@ sub detectWordPress {
 sub wellKnown {
 	my($host) = @_;
 	my $url = "";
-	my $ua = LWP::UserAgent->new((max_redirect=>0));
+	my $ua = LWP::UserAgent->new(); # No reason to not follow redirects
 	my @log=(q(wellKnown()));
 
-	for my $proto (qw(http https)) {
+	for my $proto (qw(https http)) {
 		for my $dir (qw( wellknown .wellknown .)) {
 			for my $file (qw( .security .security.txt security.txt )) {
 				$url = sprintf("%s://%s/%s/%s",$proto,$host,$dir,$file);

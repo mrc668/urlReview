@@ -8,6 +8,12 @@ use LWP::UserAgent;
 use HTTP::Status qw(:constants :is status_message);
 use Data::Dumper;
 
+my $vtAPIKey=q();
+push @INC, q(.);
+require ".env";
+	die("key empty.") if $vtAPIKey eq "";
+
+
 open(debugLog,">urlReview.log");
 print debugLog "="x40 . "\n";
 print debugLog "start log\n";
@@ -39,8 +45,8 @@ sub detectWordPress {
 				my $res = $ua->request($req);
 				push @log, "status " . $res->code . " " . $url;
 				if( $res->code == 200 ) {
-					print "may be WP, $url has content.\n";
-					push @log, "may be WP, $url has content.";
+					#print "may be WP.\n";
+					#push @log, "may be WP, $url has content.";
 					my $content = $res->content;
 					if( $content =~ m/WordPress/ ) {
 						print "$host seems to be a word press site.\n";
@@ -73,8 +79,8 @@ sub wellKnown {
 				my $res = $ua->request($req);
 				if( $res->code == 200 ) {
 					my $content = $res->content;
-					print "security.txt\n";
-					print $content;
+					print "security.txt: $url \n";
+					print $content if length($content) < 1000;
 					push @log, "security.txt";
 					push @log, $content;
 					logToDebug join("\n",@log);
@@ -127,6 +133,7 @@ sub openURL {
 
 		wellKnown($uri->host);
 		detectWordPress($uri->host);
+		vt_api( $uri->as_string);
 
 	} elsif( $res->code == 301 || $res->code == 302 ) {
 		printf "301 redirect to %s\n", $res->header("Location");
@@ -140,10 +147,46 @@ sub openURL {
 		logToDebug join("\n",@log);
 		die;
 	}
-
-
-
 } # openURL()
+
+sub vt_api {
+	my($vtQuery) = @_;
+	my @log = (qq(vt_api($vtQuery)));
+	die("key not defined.")  if ! defined($vtAPIKey);
+	die("key empty.") if $vtAPIKey eq "";
+	push @log, sprintf "have vt API key, checking: %s", $vtQuery;
+
+
+	# Create a user agent object
+	my $ua = LWP::UserAgent->new();
+	$ua->agent("Contact Milton Calnek for more information");
+	$ua->default_header( q(x-apikey) => $vtAPIKey );
+
+	# Create a request
+	my $req = HTTP::Request->new(GET => q(https://www.virustotal.com/api/v3/urls), q(url) => $vtQuery );
+
+	# Pass request to the user agent and get a response back
+	my $res = $ua->request($req);
+
+	# review result
+	printf "VT Status code: %s\n" , $res->code ;
+	push @log, "VT Status code: " . $res->code ;
+
+	if( $res->code == 200 ) {
+
+		# Check the outcome of the response
+		my $content = $res->content;
+		push @log, sprintf "VT Content:\n%s", $content;
+		logToDebug join("\n",@log);
+
+	} else {
+		print "Something went wrong in VT\n";
+		push @log,  "Something went wrong in VT\n";
+		logToDebug join("\n",@log);
+	}
+
+} # vt_url
+
 
 openURL($ARGV[0]);
 

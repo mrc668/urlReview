@@ -8,7 +8,7 @@ use LWP::UserAgent;
 use HTTP::Status qw(:constants :is status_message);
 use Data::Dumper;
 
-my $vtAPIKey=q();
+our $vtAPIKey=q();
 push @INC, q(.);
 require ".env";
 	die("key empty.") if $vtAPIKey eq "";
@@ -112,7 +112,7 @@ sub openURL {
 
 	# Create a user agent object
 	my $ua = LWP::UserAgent->new((max_redirect=>0));
-	$ua->agent("Contact Milton Calnek for more information");
+	$ua->agent(q(Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/94.0.4606.81 Safari/537.36));
 
 	# Create a request
 	my $req = HTTP::Request->new(GET => $uri->as_string);
@@ -159,11 +159,16 @@ sub vt_api {
 
 	# Create a user agent object
 	my $ua = LWP::UserAgent->new();
-	$ua->agent("Contact Milton Calnek for more information");
-	$ua->default_header( q(x-apikey) => $vtAPIKey );
+	$ua->agent(q(Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/94.0.4606.81 Safari/537.36));
+	#$ua->default_header( q(x-apikey) => $vtAPIKey );
 
 	# Create a request
-	my $req = HTTP::Request->new(GET => q(https://www.virustotal.com/api/v3/urls), q(url) => $vtQuery );
+	#  curl --request POST --url "https://www.virustotal.com/api/v3/urls" --header "x-apikey: 983f75a3d73e933648e274a04242885b7e2d309223ac564814ed9fa20a5dd803" --form "url=www.supportme1800.com"
+	my $req = HTTP::Request->new(
+		POST => q(https://www.virustotal.com/api/v3/urls), 
+		[ q(url) => $vtQuery ],
+		q(x-apikey) => $vtAPIKey
+	);
 
 	# Pass request to the user agent and get a response back
 	my $res = $ua->request($req);

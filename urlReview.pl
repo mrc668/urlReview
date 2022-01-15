@@ -105,6 +105,26 @@ sub theJigIsUp {
 	exit 0;
 } # the jig is up
 
+sub netDNS_Lookup {
+	my ($passedHost) =  @_;
+	my @log = (qq(netDNS_Lookup($passedHost)));
+	use Net::DNS;
+	my $res   = Net::DNS::Resolver->new;
+	my $reply = $res->search($passedHost, "A");
+	my @response = ();
+	 
+	if ($reply) {
+		foreach my $rr ($reply->answer) {
+			push @response, $rr->address if $rr->can("address");
+			push @log, sprintf "Found IP: %s\n", $rr->address if $rr->can("address");
+		}
+	} else {
+		push @log, sprintf("query failed: %s\n", $res->errorstring);
+	}
+	logToDebug join("\n",@log);
+	return @response;
+} # Net::DNS Lookup
+
 sub openURL {
 	my ($passedURL) =  @_;
 	my $uri = URI->new($passedURL);
@@ -116,9 +136,13 @@ sub openURL {
 	#printf "full: %s\n", $uri->as_string;
 	# check for www.cira.ca.
 	theJigIsUp if $uri->host eq "www.cira.ca";
+	
 	printf "-"x40 . "\n";
 	printf "reviewing: %s\n", $uri->as_string;
 	push @log, sprintf "reviewing: %s", $uri->as_string;
+	my @serverIPs = netDNS_Lookup($uri->host);
+	push @log, sprintf("IP: %s", join(", ", @serverIPs));
+	print "Server IPs: ",  join(", ", @serverIPs), "\n";
 
 
 	# Create a user agent object
@@ -145,6 +169,7 @@ sub openURL {
 		wellKnown($uri->host);
 		detectWordPress($uri->host);
 		vt_api( $uri->as_string);
+		foreach my $ip (@serverIPs) { vt_api( $ip); }
 
 	} elsif( $res->code == 301 || $res->code == 302 ) {
 		printf "301 redirect to %s\n", $res->header("Location");
@@ -188,7 +213,7 @@ sub vt_api {
 	#print Dumper $res;
 
 	# review result
-	printf "VT Status code: %s\n" , $res->code ;
+	#printf "VT Status code: %s\n" , $res->code ;
 	push @log, "VT Status code: " . $res->code ;
 
 	if( $res->code == 200 ) {

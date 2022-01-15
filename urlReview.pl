@@ -171,13 +171,14 @@ sub vt_api {
 
 	# Create a request
 	#  curl --request POST --url "https://www.virustotal.com/api/v3/urls" --header "x-apikey: 983f75a3d73e933648e274a04242885b7e2d309223ac564814ed9fa20a5dd803" --form "url=www.supportme1800.com"
-	my $req = HTTP::Request->new(
-		POST => q(https://www.virustotal.com/api/v3/urls), 
-		[ q(url) => $vtQuery ]
-	);
-	$req->header( q(x-apikey) => $vtAPIKey );
-	#$req->header( q(content-length) => 12 + length($req->as_string) );
-	$req->header( q(content-length) );
+
+	my $header = [
+	 	'x-apikey' => $vtAPIKey
+	];
+
+	my $data = sprintf(q(url=%s), $vtQuery );
+	my $req = HTTP::Request->new( "POST", q(https://www.virustotal.com/api/v3/urls), $header, $data);
+	print Dumper $req;
 
 	# Pass request to the user agent and get a response back
 	my $res = $ua->request($req);

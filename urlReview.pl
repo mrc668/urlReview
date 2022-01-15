@@ -7,14 +7,17 @@ use LWP::Simple;
 use LWP::UserAgent;
 use HTTP::Status qw(:constants :is status_message);
 use Data::Dumper;
+use URI::Encode;
 
 our $vtAPIKey=q();
 push @INC, q(.);
 require ".env";
 	die("key empty.") if $vtAPIKey eq "";
 
+my $LogFile     = URI::Encode->new( { encode_reserved => 1 } );
+my $BaseName = $LogFile->encode($ARGV[0]);
 
-open(debugLog,">urlReview.log");
+open(debugLog,sprintf(">%s.log",substr($BaseName,0,60))) or die ("Failed to open debug log: $!");
 print debugLog "="x40 . "\n";
 print debugLog "start log\n";
 print debugLog "="x40 . "\n";
@@ -178,11 +181,11 @@ sub vt_api {
 
 	my $data = sprintf(q(url=%s), $vtQuery );
 	my $req = HTTP::Request->new( "POST", q(https://www.virustotal.com/api/v3/urls), $header, $data);
-	print Dumper $req;
+	#print Dumper $req;
 
 	# Pass request to the user agent and get a response back
 	my $res = $ua->request($req);
-	print Dumper $res;
+	#print Dumper $res;
 
 	# review result
 	printf "VT Status code: %s\n" , $res->code ;
@@ -194,6 +197,7 @@ sub vt_api {
 		my $content = $res->content;
 		push @log, sprintf "VT Content:\n%s", $content;
 		logToDebug join("\n",@log);
+		print "$content\n";
 
 	} else {
 		print "Something went wrong in VT\n";

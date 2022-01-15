@@ -38,7 +38,7 @@ sub detectWordPress {
 	my $ua = LWP::UserAgent->new(); # no reason to not follow redirect
 
 	for my $proto (qw(https http)) {
-		for my $dir (qw( . wordpress wordPress WordPress Wordpress wp-admin WP-Admin WP-ADMIN )) {
+		for my $dir (qw( . wp wordpress wordPress WordPress Wordpress wp-admin WP-Admin WP-ADMIN wp/wp-admin )) {
 			for my $file (qw( . License.txt )) {
 				$url = sprintf("%s://%s/%s/%s",$proto,$host,$dir,$file);
 				my $req = HTTP::Request->new(GET => $url);
@@ -96,6 +96,12 @@ sub wellKnown {
 	return;
 } # well known
 
+sub theJigIsUp {
+	printf "Its www.cira.ca. The link is no longer interesting as it is known to be bad.\n";
+	logToDebug sprintf "Its www.cira.ca. The link is no longer interesting as it is known to be bad.\n";
+	exit 0;
+} # the jig is up
+
 sub openURL {
 	my ($passedURL) =  @_;
 	my $uri = URI->new($passedURL);
@@ -105,6 +111,8 @@ sub openURL {
 	#printf "host: %s\n", $uri->host;
 	#printf "path: %s\n", $uri->path;
 	#printf "full: %s\n", $uri->as_string;
+	# check for www.cira.ca.
+	theJigIsUp if $uri->host eq "www.cira.ca";
 	printf "-"x40 . "\n";
 	printf "reviewing: %s\n", $uri->as_string;
 	push @log, sprintf "reviewing: %s", $uri->as_string;
@@ -145,7 +153,7 @@ sub openURL {
 	} else {
 		push @log, "Unhandled status code";
 		logToDebug join("\n",@log);
-		die;
+		die "Unahndled status code: $res->code";
 	}
 } # openURL()
 

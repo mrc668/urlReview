@@ -1,20 +1,19 @@
-IP Address report
-curl --request GET \
-  --url https://www.virustotal.com/api/v3/ip_addresses/{ip} \
-	  --header 'x-apikey: <your API key>'
-
+Upload URL for Analysis
+curl --request POST \
+  --url https://www.virustotal.com/api/v3/urls \
+	  --header 'x-apikey: <your API key>' \
+		  --form url='<url>'
 
 URL by ID
 curl --request GET \
   --url https://www.virustotal.com/api/v3/urls/{id} \
 	  --header 'x-apikey: <your API key>'
 
+IP Address report
+curl --request GET \
+  --url https://www.virustotal.com/api/v3/ip_addresses/{ip} \
+	  --header 'x-apikey: <your API key>'
 
-Upload URL for Analysis
-curl --request POST \
-  --url https://www.virustotal.com/api/v3/urls \
-	  --header 'x-apikey: <your API key>' \
-		  --form url='<url>'
 
 Domain
 curl --request GET \

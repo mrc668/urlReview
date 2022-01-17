@@ -17,14 +17,6 @@ require ".env";
 
 require "urlRevieSubs.pl";
 
-my $URI_Encode     = URI::Encode->new( { encode_reserved => 1 } );
-my $BaseName = $URI_Encode->encode($ARGV[0]);
-our $LogFile = sprintf("%s-%s.log", 
-	time(),
-	substr($URI_Encode->encode($ARGV[0]),0,48)
-);
-	
-
-
-openURL($ARGV[0]);
+our $LogFile = q(test-vt-ip.log);
+vt_api("172.64.80.1", {q(obj) => "ip_addresses"});
 

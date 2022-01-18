@@ -162,7 +162,7 @@ sub openURL {
 
 	} elsif( $res->code == 301 || $res->code == 302 ) {
 		printf "301 redirect to %s\n", $res->header("Location");
-		push @log, "Location: " . $res->header("Location");
+		push @log, "301 redirect: Location: " . $res->header("Location");
 		logToDebug join("\n",@log);
 		openURL($res->header("Location"));
 		return;
@@ -178,7 +178,7 @@ sub openURL {
 
 sub vt_url2id {
 	my($url) = @_;
-	my @log = (qq(vt_api($vtQuery)));
+	my @log = (qq(vt_url2id($vtQuery)));
 
 	# Create a user agent object
 	my $ua = LWP::UserAgent->new();
@@ -254,10 +254,10 @@ sub vt_report_ip {
 		printf "%s: %s\n", $_, $data->{'data'}->{'attributes'}->{'last_analysis_stats'}->{$_};
 	}
 
-	my @log = (qq(vt_api($vtQuery)));
+	my @log = (qq(vt_report_ip($vtQuery)));
 	push @log, "v"x40;
  	push @log, sprintf("%s", Dumper $data);
 	push @log, "^"x40;
 	logToDebug join("\n",@log);
-} 
+}  # vt_report_ip
 

@@ -169,12 +169,37 @@ sub openURL {
 
 	} else {
 		push @log, "Unhandled status code";
+		push @log, sprintf("%s", Dumper $res);
 		logToDebug join("\n",@log);
+		print Dumper $res;
 		die "Unahndled status code: $res->code";
 	}
 } # openURL()
 
 sub vt_url2id {
+	my($url) = @_;
+	my @log = (qq(vt_api($vtQuery)));
+
+	# Create a user agent object
+	my $ua = LWP::UserAgent->new();
+	$ua->agent(q(Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/94.0.4606.81 Safari/537.36));
+
+	my $header = [
+	 	'x-apikey' => $vtAPIKey
+	];
+	my $data = sprintf(q(url=%s), $url );
+
+	my $req = HTTP::Request->new( "POST", q(https://www.virustotal.com/api/v3/urls), $header, $data);
+
+	# Pass request to the user agent and get a response back
+	my $res = $ua->request($req);
+	push @log, q(Request to  VT);
+	push @log, sprintf("%s", Dumper $res);
+
+	my $json = JSON->new->allow_nonref;
+	my $vt_analysis = $json->decode( $res->content );
+	logToDebug join("\n",@log);
+	return($vt_analysis->{'data'}->{'id'});
 } #url to id
 
 sub vt_api {

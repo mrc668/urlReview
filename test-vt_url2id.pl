@@ -17,14 +17,7 @@ require ".env";
 
 require "urlRevieSubs.pl";
 
-my $URI_Encode     = URI::Encode->new( { encode_reserved => 1 } );
-my $BaseName = $URI_Encode->encode($ARGV[0]);
-our $LogFile = sprintf("%s-%s.log", 
-	substr($URI_Encode->encode($ARGV[0]),0,48),
-	time()
-);
-	
-
-
-openURL($ARGV[0]);
+our $LogFile = q(test-vt_url2id.log);
+my $id = vt_url2id(q(https://www.uregina.ca));
+print "vt_url2id() = $id\n";
 

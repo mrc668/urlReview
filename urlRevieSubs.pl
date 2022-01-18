@@ -4,15 +4,11 @@ sub logToDebug {
 	my ($msg) = @_;
 
 	open(debugLog,">>$LogFile") or die ("Failed to open debug log: $!");
-	#print debugLog "="x40 . "\n";
-	#print debugLog "start log\n";
-	#print debugLog "="x40 . "\n";
 
 	print debugLog "-"x40 . "\n";
 	my @stack = caller(0);
-	print debugLog "-"x40 . "\n";
-	#print Dumper \@stack;
 	printf debugLog "%s:%s\n", $stack[1], $stack[2];
+	print debugLog "."x40 . "\n";
 
 	printf debugLog "%s\n", $msg;
 	printf debugLog "^"x40 . "\n";
@@ -211,9 +207,9 @@ sub vt_api {
 	#push @log, sprintf("%s", Dumper $opts) if defined( $opts);
 	push @log, sprintf("www.virustotal.com: %s",$vtQuery);
 
-	$opts->{'obj'} = q(urls) if ! defined $opts->{'obj'};
+	$opts->{'obj'} = q(analyses) if ! defined $opts->{'obj'};
 	# if it is url object, then get id.
-	$vtQuery = vt_url2id($vtQuery) if $opts->{'obj'} eq q(urls);
+	$vtQuery = vt_url2id($vtQuery) if $opts->{'obj'} eq q(analyses);
 	
 	# what object do I have? Write query
 	my $vtURI = sprintf("https://www.virustotal.com/api/v3/%s/%s", $opts->{'obj'}, $vtQuery);
@@ -232,11 +228,12 @@ sub vt_api {
 
 	# Pass request to the user agent and get a response back
 	my $res = $ua->request($req);
-	#push @log, q(Request to  VT);
-	#push @log, sprintf("%s", Dumper $res);
+	push @log, q(Response from  VT);
+	push @log, sprintf("%s", Dumper $res);
 
 	my $json = JSON->new->allow_nonref;
 	my $vt_analysis = $json->decode( $res->content );
+	push @log, sprintf("%s", Dumper $vt_analysis);
 	logToDebug join("\n",@log);
 
 	vt_report_ip($vt_analysis,$vtQuery) if$opts->{'obj'} eq 'ip_addresses';
@@ -248,16 +245,14 @@ sub vt_report_ip {
 	my($data, $vtQuery) = @_;
 	print "\nVirusTotal Report for $vtQuery\n";
 	print "-"x40, "\n";
-	printf "RIR: %s\n", $data->{'data'}->{'attributes'}->{'regional_internet_registry'};
+	printf "Regional Internet Registry: %s\n", $data->{'data'}->{'attributes'}->{'regional_internet_registry'};
 	printf "Security Vendors Reporting:\n";
 	foreach (keys(%{ $data->{'data'}->{'attributes'}->{'last_analysis_stats'} })) {
 		printf "%s: %s\n", $_, $data->{'data'}->{'attributes'}->{'last_analysis_stats'}->{$_};
 	}
 
 	my @log = (qq(vt_report_ip($vtQuery)));
-	push @log, "v"x40;
  	push @log, sprintf("%s", Dumper $data);
-	push @log, "^"x40;
 	logToDebug join("\n",@log);
 }  # vt_report_ip
 

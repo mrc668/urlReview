@@ -208,8 +208,12 @@ sub vt_api {
 	push @log, sprintf("www.virustotal.com: %s",$vtQuery);
 
 	$opts->{'obj'} = q(analyses) if ! defined $opts->{'obj'};
+
 	# if it is url object, then get id.
-	$vtQuery = vt_url2id($vtQuery) if $opts->{'obj'} eq q(analyses);
+	if ($opts->{'obj'} eq q(analyses)) {
+		$opts->{'url'} = $vtQuery;
+		$vtQuery = vt_url2id($vtQuery) 
+	}
 	
 	# what object do I have? Write query
 	my $vtURI = sprintf("https://www.virustotal.com/api/v3/%s/%s", $opts->{'obj'}, $vtQuery);
@@ -227,19 +231,45 @@ sub vt_api {
 	my $req = HTTP::Request->new( "GET", $vtURI, $header);
 
 	# Pass request to the user agent and get a response back
-	my $res = $ua->request($req);
-	push @log, q(Response from  VT);
-	push @log, sprintf("%s", Dumper $res);
-
+	my $res = 0;
+	my $sleep = 1;
 	my $json = JSON->new->allow_nonref;
-	my $vt_analysis = $json->decode( $res->content );
+	my $vt_analysis ;
+	while( $sleep < 60) {
+		$res = $ua->request($req);
+		die( "no res content") if ! defined $res->content || $res->content eq "";
+		push @log, q(Response from  VT);
+		push @log, sprintf("%s", Dumper $res);
+
+		$vt_analysis = $json->decode( $res->content );
+		last if $opts->{'obj'} ne q(analyses);
+		last if $vt_analysis->{'data'}->{"attributes"}->{'status'} eq "completed";
+
+		sleep $sleep;
+		$sleep *= 2;
+	}
+		
+
 	push @log, sprintf("%s", Dumper $vt_analysis);
 	logToDebug join("\n",@log);
 
-	vt_report_ip($vt_analysis,$vtQuery) if$opts->{'obj'} eq 'ip_addresses';
+	vt_report_ip($vt_analysis,$vtQuery) if $opts->{'obj'} eq 'ip_addresses';
+	vt_report_urls($vt_analysis,$opts->{'url'}) if $opts->{'obj'} eq 'analyses';
 
 
 } # vt_api
+
+sub vt_report_urls {
+	my($data, $vtQuery) = @_;
+	print "\nVirusTotal Report for $vtQuery\n";
+	print "-"x40, "\n";
+
+	printf "Security Vendors Reporting:\n";
+	foreach (keys(%{ $data->{'data'}->{'attributes'}->{'stats'} })) {
+		printf "%s: %s\n", $_, $data->{'data'}->{'attributes'}->{'stats'}->{$_};
+	}
+
+} # vt_report_urls
 
 sub vt_report_ip {
 	my($data, $vtQuery) = @_;

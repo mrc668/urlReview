@@ -198,6 +198,43 @@ sub vt_url2id {
 	return($vt_analysis->{'data'}->{'id'});
 } #url to id
 
+sub misp_api {
+	my($mispQuery,$opts) = @_;
+	my @log = (qq(misp_api($mispQuery)));
+	die("key not defined.")  if ! defined($mispAPIKey);
+	die("key empty.") if $mispAPIKey eq "";
+	push @log, sprintf "have misp API key, checking: %s", $mispQuery;
+	#push @log, sprintf("%s", Dumper $opts) if defined( $opts);
+	push @log, sprintf("tf.canssoc.ca: %s",$mispQuery);
+	my $json = JSON->new->allow_nonref;
+	push @log, sprintf(q(time stamp: enter subroutine: %s), time());
+
+	my $header = [
+	 	'Authorization' => $mispAPIKey,
+		'Accept' => 'application/json',
+		'Content-type' => 'application/json'
+	];
+
+	my $data = $json->encode({"searchall" => $mispQuery});
+	push @log, Dumper $data;
+	my $req = HTTP::Request->new( "POST", q(https://tf.canssoc.ca/attributes/restSearch), $header, $data);
+	my $ua = LWP::UserAgent->new();
+
+	push @log, sprintf(q(time stamp: make request: %s), time());
+	my $res = $ua->request($req);
+	push @log, sprintf(q(time stamp: return from request: %s), time());
+	die( "no res content") if ! defined $res->content || $res->content eq "";
+	push @log, q(Response from  MISP);
+	push @log, sprintf("%s", Dumper $res);
+
+	my $misp_analysis = $json->decode( $res->content );
+	push @log, sprintf(q(time stamp: exit subroutine: %s), time());
+	push @log, $misp_analysis;
+
+	logToDebug join("\n",@log);
+	return();
+} # misp_api
+
 sub vt_api {
 	my($vtQuery,$opts) = @_;
 	my @log = (qq(vt_api($vtQuery)));

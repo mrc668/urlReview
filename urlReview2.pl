@@ -36,7 +36,6 @@ sub analyze_url {
 	#   check for cpanel
 	#   check for security contact
 	#   compare output against browser variations
-	#   check certificate chain on https - who signed it, is it valid, CN.
 	# if no:
 	#   add new location to artifacts
 }
@@ -58,6 +57,7 @@ sub analyze_name {
 	# check name against misp
 	# check name against cyber gordon
 	# check for http[s]://name/contact
+	# check certificate chain on https - who signed it, is it valid, CN.
 
 }
 

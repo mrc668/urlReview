@@ -31,10 +31,12 @@ sub analyze_url {
 	# is this the last redirection?
 	# if yes:
 	#   check for word press
+	#   if yes - check for exposed admin interfaces: https://yourdomain.com/wp-admin https://yourdomain.com/wp-login.php
 	#   check for joomla
 	#   check for cpanel
 	#   check for security contact
 	#   compare output against browser variations
+	#   check certificate chain on https - who signed it, is it valid, CN.
 	# if no:
 	#   add new location to artifacts
 }

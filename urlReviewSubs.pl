@@ -26,7 +26,7 @@ sub detectWordPress {
 		for my $dir (qw( . wp wordpress wordPress WordPress Wordpress wp-admin WP-Admin WP-ADMIN wp/wp-admin )) {
 			for my $file (qw( . License.txt )) {
 				$url = sprintf("%s://%s/%s/%s",$proto,$host,$dir,$file);
-				print "Guess $url\n";
+				#print "Guess $url\n";
 				my $req = HTTP::Request->new(GET => $url);
 				my $res = $ua->request($req);
 				push @log, "status " . $res->code . " " . $url;
@@ -152,6 +152,8 @@ sub openURL {
 
 		# Check the outcome of the response
 		my $content = $res->content;
+		printf "Content length: %s\n", length($content) ;
+		push @log, "Content length: " . length($content) ;
 		push @log, sprintf "Page content:\n%s", $content;
 		logToDebug join("\n",@log);
 		@log=();
@@ -161,14 +163,14 @@ sub openURL {
 		push @log, "301 redirect: Location: " . $res->header("Location");
 		logToDebug join("\n",@log);
 		push @artifacts, $res->header("Location");
-		return;
 
 	} else {
+		printf "Unhandled status code: %s\n", $res->code;
 		push @log, "Unhandled status code";
 		push @log, sprintf("%s", Dumper $res);
-		logToDebug join("\n",@log);
-		print Dumper $res;
-		die "Unahndled status code: $res->code";
 	}
+
+	logToDebug join("\n",@log);
+	return($res->code == 200);
 } # openURL()
 

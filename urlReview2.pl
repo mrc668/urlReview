@@ -43,45 +43,54 @@ sub analyze_artifact {
 sub analyze_url {
 	my ($art) = @_;
 	my $uri = URI->new($art);
-	my @log = (qq(openURL($art)));
+	my @log = (qq(analyze_url($art)));
 
 	my $dom = $uri->host;
 	push @artifacts, $dom unless grep({ $dom eq $_ } @artifacts);
 	netDNS_Lookup($dom);
 
 	print "Analyzing url: $art\n";
-	openURL($art);
+	if ( openURL($art) == 200 ) {
 
+		# check url against VT
+		#vt_api( $uri->as_string);
 
-	# check url against VT
-	#vt_api( $uri->as_string);
+		# check url against misp
+		# check url against cyber gordon
 
-	# check url against misp
-	# check url against cyber gordon
+		#   check for word press
+		#   if yes - check for exposed admin interfaces: https://yourdomain.com/wp-admin https://yourdomain.com/wp-login.php
+		detectWordPress($uri->host);
+	
+		#   check for joomla
+		#   check for cpanel
+	
+		#   check for security contact
+		wellKnown($uri->host);
+	
+		#   compare output against browser variations
+		# if no:
+		#   add new location to artifacts
+	}
 
-	#   check for word press
-	#   if yes - check for exposed admin interfaces: https://yourdomain.com/wp-admin https://yourdomain.com/wp-login.php
-	detectWordPress($uri->host);
-
-	#   check for security contact
-	wellKnown($uri->host);
-
-	# is this the last redirection?
-	# if yes:
-	#   check for joomla
-	#   check for cpanel
-	#   compare output against browser variations
-	# if no:
-	#   add new location to artifacts
 }
 
 sub analyze_ip {
 	my ($art) = @_;
+	my @log = (qq(analyze_ip($art)));
 
 	print "Analyzing ip: $art\n";
-	# check ip against VT
-	# check ip against misp
-	# check ip against cyber gordon
+	if( 
+		( $art eq q(99.83.179.4) ) ||
+		( $art eq q(75.2.78.236) ) ) {
+		print "Its CIRA-Malware detected. Skipping tests.\n";
+		push @log, "Its CIRA-Malware detected. Skipping tests.";
+	} else {
+		1;
+		# check ip against VT
+		# check ip against misp
+		# check ip against cyber gordon
+	}
 }
 
 sub analyze_name {

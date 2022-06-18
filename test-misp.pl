@@ -18,6 +18,7 @@ require ".env";
 require "urlReviewSubs.pl";
 
 our $LogFile = q(test-misp.log);
-#check_misp_url("canada-packrec-b2efb2.ingress-comporellon.ewp.live");
-check_misp_url("https://ueduca.000webhostapp.com/");
+#check_misp("canada-packrec-b2efb2.ingress-comporellon.ewp.live");
+check_misp("https://ueduca.000webhostapp.com/");
+check_misp("195.142.132.154");
 

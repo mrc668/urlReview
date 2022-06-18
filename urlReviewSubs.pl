@@ -66,7 +66,7 @@ sub wellKnown {
 				if( $res->code == 200 ) {
 					my $content = $res->content;
 					print "security.txt: $url \n";
-					print $content if length($content) < 1000;
+					print $content if length($content) < 3000;
 					push @log, "security.txt";
 					push @log, $content;
 					logToDebug join("\n",@log);
@@ -174,7 +174,7 @@ sub openURL {
 	return($res->code == 200);
 } # openURL()
 
-sub check_misp_url {
+sub check_misp {
 	my($mispQuery,$opts) = @_;
 	my @log = (qq(misp_api($mispQuery)));
 	die("key not defined.")  if ! defined($mispAPIKey);
@@ -190,19 +190,18 @@ sub check_misp_url {
 		'Accept' => 'application/json',
 		'Content-type' => 'application/json'
 	];
-	print "header\n";
-	print Dumper $header;
+	#print "header\n";
+	#print Dumper $header;
 
 	my $data = $json->encode({
 		#"searchall" => $mispQuery, # event
 		"value" => $mispQuery, # attribute
-		"type" => "url",
 		"includeContext" => 0,
 		"requested_attributes" => qw(event_id)
 	});
 	push @log, Dumper $data;
-	print "data\n";
-	print Dumper $data;
+	#print "data\n";
+	#print Dumper $data;
 	#my $req = HTTP::Request->new( "POST", q(https://tf.canssoc.ca/attributes/restSearch), $header, $data);
 	my $req = HTTP::Request->new( "POST", q(https://tf.canssoc.ca/events/restSearch), $header, $data);
 	my $ua = LWP::UserAgent->new();
@@ -217,7 +216,14 @@ sub check_misp_url {
 	push @log, sprintf(q(time stamp: exit subroutine: %s), time());
 	my $misp_analysis = $json->decode( $res->content );
 	push @log, q(misp analysis decoded);
-	push @log, Dumper $misp_analysis;
+	push @log, Dumper $misp_analysis->{'response'}->[0]->{'Event'}->{'Attribute'}->[0]->{'event_id'};
+
+	foreach my $e (@{$misp_analysis->{'response'}}) {
+		if( $e->{'Event'}->{'Attribute'}->[0]->{'event_id'} =~ m/\d+/) {
+			printf qq(https://tf.canssoc.ca/events/view/%s\n), $e->{'Event'}->{'Attribute'}->[0]->{'event_id'} ;
+			push @log, sprintf qq(https://tf.canssoc.ca/events/view/%s\n), $e->{'Event'}->{'Attribute'}->[0]->{'event_id'} ;
+		} # if event
+	} #foreach result
 
 	logToDebug join("\n",@log);
 	return();

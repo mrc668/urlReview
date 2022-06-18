@@ -55,7 +55,6 @@ sub analyze_url {
 		# check url against VT
 		#vt_api( $uri->as_string);
 
-		# check url against misp
 		# check url against cyber gordon
 
 		#   check for word press
@@ -73,6 +72,10 @@ sub analyze_url {
 		#   add new location to artifacts
 	}
 
+	# check url against misp
+	check_misp($art);
+
+
 }
 
 sub analyze_ip {
@@ -86,9 +89,11 @@ sub analyze_ip {
 		print "Its CIRA-Malware detected. Skipping tests.\n";
 		push @log, "Its CIRA-Malware detected. Skipping tests.";
 	} else {
-		1;
 		# check ip against VT
+
 		# check ip against misp
+		check_misp($art);
+
 		# check ip against cyber gordon
 	}
 }
@@ -99,9 +104,12 @@ sub analyze_name {
 	print "Analyzing name: $art\n";
 	# check name against VT
 	# check name against misp
+	check_misp($art);
+
 	# check name against cyber gordon
 	# check for http[s]://name/contact
 	# check certificate chain on https - who signed it, is it valid, CN.
+	# check whois
 
 }
 

@@ -174,3 +174,51 @@ sub openURL {
 	return($res->code == 200);
 } # openURL()
 
+sub check_misp_url {
+	my($mispQuery,$opts) = @_;
+	my @log = (qq(misp_api($mispQuery)));
+	die("key not defined.")  if ! defined($mispAPIKey);
+	die("key empty.") if $mispAPIKey eq "";
+	push @log, sprintf "have misp API key, checking: %s", $mispQuery;
+	#push @log, sprintf("%s", Dumper $opts) if defined( $opts);
+	push @log, sprintf("tf.canssoc.ca: %s",$mispQuery);
+	my $json = JSON->new->allow_nonref;
+	push @log, sprintf(q(time stamp: enter subroutine: %s), time());
+
+	my $header = [
+	 	'Authorization' => $mispAPIKey,
+		'Accept' => 'application/json',
+		'Content-type' => 'application/json'
+	];
+	print "header\n";
+	print Dumper $header;
+
+	my $data = $json->encode({
+		#"searchall" => $mispQuery, # event
+		"value" => $mispQuery, # attribute
+		"type" => "url",
+		"includeContext" => 0,
+		"requested_attributes" => qw(event_id)
+	});
+	push @log, Dumper $data;
+	print "data\n";
+	print Dumper $data;
+	#my $req = HTTP::Request->new( "POST", q(https://tf.canssoc.ca/attributes/restSearch), $header, $data);
+	my $req = HTTP::Request->new( "POST", q(https://tf.canssoc.ca/events/restSearch), $header, $data);
+	my $ua = LWP::UserAgent->new();
+
+	push @log, sprintf(q(time stamp: make request: %s), time());
+	my $res = $ua->request($req);
+	push @log, sprintf(q(time stamp: return from request: %s), time());
+	die( "no res content") if ! defined $res->content || $res->content eq "";
+	#push @log, q(Response from  MISP);
+	#push @log, sprintf("%s", Dumper $res);
+
+	push @log, sprintf(q(time stamp: exit subroutine: %s), time());
+	my $misp_analysis = $json->decode( $res->content );
+	push @log, q(misp analysis decoded);
+	push @log, Dumper $misp_analysis;
+
+	logToDebug join("\n",@log);
+	return();
+} # check_misp_url

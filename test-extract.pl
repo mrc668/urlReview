@@ -42,5 +42,5 @@ gtag('config', 'UA-22484186-3');
 </html>);
 
 parsePage($content);
-print join("\n",@artifacts);
+print join("\n",@artifacts), "\n";
 

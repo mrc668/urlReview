@@ -232,13 +232,16 @@ sub check_misp {
 sub parsePage {
 	my ($content) = @_;
 	return if length($content) < 10;
-	printf "searching in:\n$content\n";
+	my @rows = split("\n",$content);
 
-	$content =~ m/(http[^"']*)(.*$)/m or return;
-	my ($url,$newcon) = ($1,$2);
-	print "Found: $url\n";
+	foreach (@rows) {
+		if( m/(http[^"']*)(.*$)/) {
+			my ($url,$newcon) = ($1,$2);
+			push @artifacts, $url;
+			parsePage($newcon);
+		} # if 
+	} # foreach
 	
-	parsePage($newcon);
 } # parse page
 
 

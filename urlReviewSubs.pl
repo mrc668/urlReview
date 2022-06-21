@@ -228,3 +228,21 @@ sub check_misp {
 	logToDebug join("\n",@log);
 	return();
 } # check_misp_url
+
+sub callback {
+	my($tag, %attr) = @_;
+	#return if $tag ne 'img';  # we only look closer at <img ...>
+	#push(@imgs, values %attr);
+	print "tag $tag\n";
+	print "opts\n", Dumper %attr;
+} 
+
+																		         
+sub parsePage {
+	my ($content) = @_;
+	use HTML::LinkExtor;
+	my $p =  HTML::LinkExtor->new(\&callback);
+	$p->parse($content);
+} # parse page
+
+

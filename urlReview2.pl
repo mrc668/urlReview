@@ -42,6 +42,7 @@ sub analyze_artifact {
 
 sub analyze_url {
 	my ($art) = @_;
+	print "Analyzing url: $art\n";
 	my $uri = URI->new($art);
 	my @log = (qq(analyze_url($art)));
 
@@ -49,7 +50,6 @@ sub analyze_url {
 	push @artifacts, $dom unless grep({ $dom eq $_ } @artifacts);
 	netDNS_Lookup($dom);
 
-	print "Analyzing url: $art\n";
 	if ( openURL($art) == 200 ) {
 
 		# check url against VT
@@ -105,6 +105,7 @@ sub analyze_name {
 	# check name against VT
 	# check name against misp
 	check_misp($art);
+	check_sans_domain($art);
 
 	# check name against cyber gordon
 	# check for http[s]://name/contact

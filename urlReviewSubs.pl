@@ -157,6 +157,7 @@ sub openURL {
 		push @log, sprintf "Page content:\n%s", $content;
 		logToDebug join("\n",@log);
 		@log=();
+		parsePage($content);
 
 	} elsif( $res->code == 301 || $res->code == 302 ) {
 		printf "301 redirect to %s\n", $res->header("Location");
@@ -235,7 +236,7 @@ sub parsePage {
 	my @rows = split("\n",$content);
 
 	foreach (@rows) {
-		if( m/(http[^"']*)(.*$)/) {
+		if( m/(https?:[^"']*)(.*$)/) {
 			my ($url,$newcon) = ($1,$2);
 			push @artifacts, $url;
 			parsePage($newcon);
@@ -243,5 +244,48 @@ sub parsePage {
 	} # foreach
 	
 } # parse page
+
+
+sub check_sans_domain {
+	my($domain) = @_;
+	return if $domain eq "";
+	die if $domain eq "";
+	my @log = (qq(check_sans_domain($domain)));
+	die("sans identity not defined.")  if ! defined($sansIdentity);
+	die("key empty.") if $sansIdentity eq "";
+	push @log, sprintf "have sans identity, checking: %s", $domain;
+	my $json = JSON->new->allow_nonref;
+
+	my $header = [
+		'Accept' => 'application/json',
+		'Content-type' => 'application/json'
+	];
+
+	my $req = HTTP::Request->new( "GET", sprintf(q(https://isc.sans.edu/api/domainage/%s?json),$domain), $header, $data);
+	my $ua = LWP::UserAgent->new();
+	$ua->agent($sansIdentity);
+
+	my $res = $ua->request($req);
+	die( "no res content") if ! defined $res->content || $res->content eq "";
+
+	my $domainAge = $json->decode( $res->content );
+	push @log, q(domain age decoded);
+	push @log, Dumper $domainAge;
+	logToDebug join("\n",@log);
+
+	# hash -> error
+	# array -> result
+	if( ref($domainAge) eq "HASH" ) {
+		my @parts = split(/\./,$domain);
+		shift @parts;
+		my $subdomain = join('.',@parts);
+		check_sans_domain($subdomain);
+
+	} else {
+		print "Domain Age:\n", Dumper $domainAge->[0];
+	}
+
+	return();
+} # check_sans_domain
 
 

@@ -1,0 +1,58 @@
+  615  2022-06-17 19:50:54 cat resp.json | jq
+  616  2022-06-17 19:51:10 cat resp.json | jq '.'
+  795  2022-06-21 21:41:34 curl --user-agent 'milton.calnek.com' 'https://isc.sans.edu/api/domainage/www.warmcoal.sa.com?json'
+  796  2022-06-21 21:41:57 curl --user-agent 'milton.calnek.com' 'https://isc.sans.edu/api/domainage/warmcoal.sa.com?json'
+  797  2022-06-21 21:42:09 curl --user-agent 'milton.calnek.com' 'https://isc.sans.edu/api/domainage/sa.com?json'
+  799  2022-06-21 21:44:05 curl --user-agent 'milton.calnek.com' 'https://isc.sans.edu/api/domainage/sa.com?json' 2>/dev/null
+  800  2022-06-21 21:48:19 curl --user-agent 'milton.calnek.com' 'https://isc.sans.edu/api/domainage/sa.com?json'
+  836  2022-06-22 21:19:51 curl https://isc.sans.edu/api/threatlist/shodan
+  837  2022-06-22 21:20:03 curl https://isc.sans.edu/api/threatlist/shodan?txt
+  838  2022-06-22 21:20:09 curl https://isc.sans.edu/api/threatlist/shodan?json
+  839  2022-06-22 21:20:18 curl https://isc.sans.edu/api/threatlist/shodan?json 2>/dev/nukk
+  840  2022-06-22 21:20:23 curl https://isc.sans.edu/api/threatlist/shodan?json 2>/dev/null
+  841  2022-06-22 21:20:31 curl https://isc.sans.edu/api/threatlist/shodan?json 2>/dev/null | jq '.'
+  842  2022-06-22 21:20:36 curl https://isc.sans.edu/api/threatlist/shodan?json 2>/dev/null | jq '.' -c | less
+  843  2022-06-22 21:20:47 curl https://isc.sans.edu/api/threatlist/shodan?json 2>/dev/null | jq '.' | less
+  844  2022-06-22 21:21:21 curl https://isc.sans.edu/api/threatlist/shodan?json 2>/dev/null | jq '.| {"ipv4"}'
+  845  2022-06-22 21:21:46 curl https://isc.sans.edu/api/threatlist/shodan?json 2>/dev/null | jq '. []| {"ipv4"}'
+  846  2022-06-22 21:21:56 curl https://isc.sans.edu/api/threatlist/shodan?json 2>/dev/null | jq '. []| {"ipv4"}' -c
+  847  2022-06-22 21:22:01 curl https://isc.sans.edu/api/threatlist/shodan?json 2>/dev/null | jq '. []| {"ipv4"}' -c | wc -l
+  848  2022-06-22 21:22:53 curl 2>/dev/null https://isc.sans.edu/api/threatfeeds/feedperday/openbl_ssh
+  849  2022-06-22 21:23:21 curl 2>/dev/null https://isc.sans.edu/api/threatfeeds/feedperday/openbl_ssh?json | jq '. []'
+  850  2022-06-22 21:23:25 curl 2>/dev/null https://isc.sans.edu/api/threatfeeds/feedperday/openbl_ssh?json | jq '. []' -c
+  851  2022-06-22 21:24:00 curl 2>/dev/null https://isc.sans.edu/api/threatfeeds/feedperday/openbl_ssh?json | jq '. []' -c | less
+  852  2022-06-22 21:24:30 curl 2>/dev/null https://isc.sans.edu/api/threatfeeds/feedperday/openbl_ssh?xml | less
+  853  2022-06-22 21:25:30 curl 2>/dev/null https://isc.sans.edu/api/threatfeeds/feedperday?json | jq '. []' -c | less
+  854  2022-06-22 21:26:40 curl 2>/dev/null https://isc.sans.edu/api/threatfeeds/feedperday?json | jq '. []' -c | wc -l
+  855  2022-06-22 21:28:36 curl 2>/dev/null https://isc.sans.edu/api/threatfeeds/?json | jq '. {}' -c | less
+  856  2022-06-22 21:28:43 curl 2>/dev/null https://isc.sans.edu/api/threatfeeds?json | jq '. {}' -c | less
+  857  2022-06-22 21:28:50 curl 2>/dev/null https://isc.sans.edu/api/threatfeeds?json 
+  858  2022-06-22 21:29:07 curl 2>/dev/null https://isc.sans.edu/api/threatfeeds?json | jq ' . []'
+  859  2022-06-22 21:29:10 curl 2>/dev/null https://isc.sans.edu/api/threatfeeds?json | jq ' . []' -c
+  860  2022-06-22 21:29:27 curl 2>/dev/null https://isc.sans.edu/api/threatfeeds/name?json | jq ' . []' -c
+  861  2022-06-22 21:29:51 curl 2>/dev/null https://isc.sans.edu/api/threatfeeds/
+  862  2022-06-22 21:30:01 curl 2>/dev/null https://isc.sans.edu/api/threatfeeds/?json
+  863  2022-06-22 21:30:19 curl 2>/dev/null https://isc.sans.edu/api/threatfeeds/?json | jq '. []'
+  864  2022-06-22 21:30:35 curl 2>/dev/null https://isc.sans.edu/api/threatfeeds/?json | jq '. []' -c
+  865  2022-06-22 21:30:50 curl 2>/dev/null https://isc.sans.edu/api/threatfeeds/?json | jq '. []' | less
+  866  2022-06-22 21:32:05 curl 2>/dev/null https://isc.sans.edu/api/threatfeeds/perday/?json | jq '. []' | less
+  867  2022-06-22 21:32:22 curl 2>/dev/null https://isc.sans.edu/api/threatfeeds/perday/name?json | jq '. []' | less
+  868  2022-06-22 21:32:34 curl 2>/dev/null https://isc.sans.edu/api/threatfeeds/perday?json | jq '. []' | less
+  869  2022-06-22 21:32:47 curl 2>/dev/null https://isc.sans.edu/api/threatfeeds/?json | jq '. []' | less
+  870  2022-06-22 21:33:31 curl 2>/dev/null https://isc.sans.edu/api/threatfeeds/feedperday/?json | jq '. []' | less
+  871  2022-06-22 21:33:39 curl 2>/dev/null https://isc.sans.edu/api/threatfeeds/feedperday/?json | jq '. []' | less
+  872  2022-06-22 21:35:08 curl 2>/dev/null https://isc.sans.edu/api/threatfeeds/feedperday/?json | jq '. []' -c
+  873  2022-06-22 21:35:17 curl 2>/dev/null https://isc.sans.edu/api/threatfeeds/feedperday/?json | jq '. []' -c | wc -l
+  874  2022-06-22 21:35:55 curl 2>/dev/null https://isc.sans.edu/api/threatfeeds/feedperday/?json | jq '. []' -c | tee feedperday.log
+  875  2022-06-22 21:36:26 jq '. | select( .count > 1000) '
+  876  2022-06-22 21:36:36 jq '. | select( .count > 1000) ' < feedperday.log 
+  877  2022-06-22 21:36:44 jq '. | select( .count > 1000) ' < feedperday.log -c
+  878  2022-06-22 21:36:50 jq '. | select( .count > 1000) ' < feedperday.log -c | wc -l
+  879  2022-06-22 21:37:37 jq '. | select( .count > 1000) ' < feedperday.log -c | sort
+  880  2022-06-22 21:38:18 jq '. | select( .count > 1000) | select ( .type = "blocklistde22") ' < feedperday.log -c | sort
+  881  2022-06-22 21:38:27 jq '. | select( .count > 1000) | select ( .type == "blocklistde22") ' < feedperday.log -c | sort
+  882  2022-06-22 21:39:10 curl https://isc.sans.edu/api/threatlist/"blocklistde22"?json
+  883  2022-06-22 21:40:05 curl https://isc.sans.edu/api/threatlist/"blocklistde22"?json 2>/dev/null | jq '. []' | tee blocklistde22.json
+  884  2022-06-22 21:40:18 curl https://isc.sans.edu/api/threatlist/"blocklistde22"?json 2>/dev/null | jq '. []' -c | tee blocklistde22.json 
+  889  2022-06-22 21:41:01 curl https://isc.sans.edu/api/threatlist/"blocklistde22"?json 2>/dev/null | jq '. []' -c | tee blocklistde22.json 
+  892  2022-06-24 22:33:14 history | grep -E "isc.sans|jq" > isc.sans.edu.api.log

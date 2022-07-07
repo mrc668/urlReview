@@ -1,3 +1,7 @@
+my @forwarders = qw( cutt.ly bit.ly owl.ly );
+my @dontFollow = qw( www.w3.org facebook.com google.com squarespace-cdn.com instagram.com jquery squarespace.com );
+my @dnsFirewalls = qw( 149.112.121.20 149.112.122.20 );
+
 1;
 
 sub logToDebug {
@@ -101,7 +105,7 @@ sub netDNS_Lookup {
 				push @response, $rr->address;
 				push @log, sprintf "Found IP: %s\n", $rr->address if $rr->can("address");
 				if ( ! grep({ $rr->address  eq $_ } @artifacts) ) {
-					push @artifacts, $rr->address ;
+					push @artifacts, $rr->address  unless grep({ $rr->address  eq $_ } @dnsFirewalls);
 					push @log, sprintf "adding IP %s to artifacts\n", $rr->address;
 				} # if not in artifacts
 			} # if rr can address
@@ -163,7 +167,10 @@ sub openURL {
 		printf "301 redirect to %s\n", $res->header("Location");
 		push @log, "301 redirect: Location: " . $res->header("Location");
 		logToDebug join("\n",@log);
-		push @artifacts, $res->header("Location");
+		my $redir = $res->header("Location");
+		if( grep({ $redir != $_ } @artifacts) ) {
+			push @artifacts, $redir unless  grep({ $redir  =~ m/$_/ } @dontFollow) ;
+		}
 
 	} else {
 		printf "Unhandled status code: %s\n", $res->code;
@@ -238,7 +245,9 @@ sub parsePage {
 	foreach (@rows) {
 		if( m/(https?:[^"']*)(.*$)/) {
 			my ($url,$newcon) = ($1,$2);
-			push @artifacts, $url;
+			if( grep({ $url != $_ } @artifacts ) ) {
+				push @artifacts, $url unless grep({ $url  =~ m/$_/ } @dontFollow); 
+			}
 			parsePage($newcon);
 		} # if 
 	} # foreach

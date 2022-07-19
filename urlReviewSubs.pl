@@ -1,6 +1,6 @@
 my @forwarders = qw( cutt.ly bit.ly owl.ly );
-my @dontFollow = qw( www.w3.org facebook.com google.com squarespace-cdn.com instagram.com jquery squarespace.com );
-my @dnsFirewalls = qw( 149.112.121.20 149.112.122.20 );
+my @dontFollow = qw( www.w3.org facebook.com google.com squarespace-cdn.com instagram.com jquery bootstrap.min.css squarespace.com cloudflare.com );
+my @dnsFirewalls = qw( 149.112.121.20 149.112.122.20 162.219.51.2 162.219.52.2);
 
 1;
 
@@ -104,9 +104,13 @@ sub netDNS_Lookup {
 			if( $rr->can("address") ) {
 				push @response, $rr->address;
 				push @log, sprintf "Found IP: %s\n", $rr->address if $rr->can("address");
-				if ( ! grep({ $rr->address  eq $_ } @artifacts) ) {
-					push @artifacts, $rr->address  unless grep({ $rr->address  eq $_ } @dnsFirewalls);
+				if ( 
+					! grep({ $rr->address  eq $_ } @artifacts) &&
+					! grep({ $rr->address  eq $_ } @dnsFirewalls)
+				) {
+					push @artifacts, $rr->address ; 
 					push @log, sprintf "adding IP %s to artifacts\n", $rr->address;
+					printf "adding IP %s to artifacts\n", $rr->address;
 				} # if not in artifacts
 			} # if rr can address
 		} # foreach

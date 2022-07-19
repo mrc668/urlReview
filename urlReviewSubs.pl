@@ -130,6 +130,7 @@ sub openURL {
 		theJigIsUp ;
 		return;
 	}
+	return if !defined($uri->host) or $uri->host == "";
 	my @log = (qq(openURL($passedURL)));
 	
 	printf "-"x40 . "\n";
@@ -161,7 +162,7 @@ sub openURL {
 		push @log, sprintf "Page content:\n%s", $content;
 		logToDebug join("\n",@log);
 		@log=();
-		parsePage($content);
+		parsePage($content) if length($content) < 3000;
 
 	} elsif( $res->code == 301 || $res->code == 302 ) {
 		printf "301 redirect to %s\n", $res->header("Location");
@@ -243,16 +244,29 @@ sub parsePage {
 	my @rows = split("\n",$content);
 
 	foreach (@rows) {
-		if( m/(https?:[^"']*)(.*$)/) {
+		if( m/(https?:[^"';]*)(.*$)/) {
 			my ($url,$newcon) = ($1,$2);
-			if( grep({ $url != $_ } @artifacts ) ) {
-				push @artifacts, $url unless grep({ $url  =~ m/$_/ } @dontFollow); 
-			}
+			#my @g = grep({ $url eq $_ } @artifacts );
+			#print "v"x40 . "\n";
+			#print "grep: $url\n", join("\n", @g), "\n";
+			#print "^"x40 . "\n";
+			if( 
+				!grep({ $url eq $_ } @artifacts ) &&
+				$url =~ m|//[\w\.]+/| &&
+				!grep({ $url =~ m/$_/ } @dontFollow) 
+			) {
+				printf qq(adding %s to artifacts \n), $url;
+				push @log, sprintf qq(adding %s to artifacts\n), $url;
+				push @artifacts, $url;
+			#} else {
+				#printf qq(skipping %s \n), $url;
+			} # if url meets conditions
 			parsePage($newcon);
-		} # if 
+		} # if  http is found in line
 	} # foreach
 	
 } # parse page
+
 
 
 sub check_sans_domain {

@@ -169,7 +169,7 @@ sub openURL {
 		parsePage($content) if length($content) < 3000;
 
 	} elsif( $res->code == 301 || $res->code == 302 ) {
-		printf "301 redirect to %s\n", $res->header("Location");
+		printf "30x redirect to %s\n", $res->header("Location");
 		push @log, "301 redirect: Location: " . $res->header("Location");
 		logToDebug join("\n",@log);
 		my $redir = $res->header("Location");

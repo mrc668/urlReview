@@ -129,18 +129,19 @@ sub openURL {
 	#printf "host: %s\n", $uri->host;
 	#printf "path: %s\n", $uri->path;
 	#printf "full: %s\n", $uri->as_string;
-	# check for www.cira.ca.
-	if($uri->host eq "www.cira.ca") {
-		theJigIsUp ;
-		return;
-	}
-	return if !defined($uri->host) or $uri->host == "";
-	my @log = (qq(openURL($passedURL)));
-	
+
 	printf "-"x40 . "\n";
 	printf "reviewing: %s\n", $uri->as_string;
 	push @log, sprintf "reviewing: %s", $uri->as_string;
 
+	# check for www.cira.ca.
+	if($uri->host eq "www.cira.ca") {
+		theJigIsUp ;
+		return(0);
+	}
+	return(0) if !defined($uri->host) or $uri->host == "";
+	my @log = (qq(openURL($passedURL)));
+	
 	# Create a user agent object
 	my $ua = LWP::UserAgent->new((max_redirect=>0));
 	$ua->agent(q(Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/94.0.4606.81 Safari/537.36));

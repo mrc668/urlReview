@@ -124,23 +124,31 @@ sub netDNS_Lookup {
 sub openURL {
 	my ($passedURL) =  @_;
 	my $uri = URI->new($passedURL);
-
-	#printf "proto: %s\n", $uri->scheme;
-	#printf "host: %s\n", $uri->host;
-	#printf "path: %s\n", $uri->path;
-	#printf "full: %s\n", $uri->as_string;
+	my @log = (sprintf(q(openURL(%s)),$passedURL));
 
 	printf "-"x40 . "\n";
 	printf "reviewing: %s\n", $uri->as_string;
 	push @log, sprintf "reviewing: %s", $uri->as_string;
+
+	printf "proto: %s\n", $uri->scheme;
+	printf "host: %s\n", $uri->host;
+	printf "path: %s\n", $uri->path;
+	printf "full: %s\n", $uri->as_string;
+
 
 	# check for www.cira.ca.
 	if($uri->host eq "www.cira.ca") {
 		theJigIsUp ;
 		return(0);
 	}
-	return(0) if !defined($uri->host) or $uri->host == "";
-	my @log = (qq(openURL($passedURL)));
+
+	if($uri->host eq "") {
+		push @log, sprintf "uri host is empty";
+		printf "uri host is empty\n";
+		printf "host: %s\n", $uri->host;
+		logToDebug join("\n",@log);
+		return(0) ;
+	}
 	
 	# Create a user agent object
 	my $ua = LWP::UserAgent->new((max_redirect=>0));

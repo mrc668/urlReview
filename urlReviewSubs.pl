@@ -109,8 +109,8 @@ sub netDNS_Lookup {
 					! grep({ $rr->address  eq $_ } @dnsFirewalls)
 				) {
 					push @artifacts, $rr->address ; 
-					push @log, sprintf "adding IP %s to artifacts\n", $rr->address;
-					printf "adding IP %s to artifacts\n", $rr->address;
+					push @log, sprintf "%s adds IP %s to artifacts\n", $passedHost, $rr->address;
+					printf "%s adds IP %s to artifacts\n", $passedHost, $rr->address;
 				} # if not in artifacts
 			} # if rr can address
 		} # foreach
@@ -284,9 +284,11 @@ sub parsePage {
 
 sub check_sans_domain {
 	my($domain) = @_;
+
+	printf( q(check_sans_domain(%s))."\n", $domain);
+	#die if $domain eq "";
 	return if $domain eq "";
-	die if $domain eq "";
-	my @log = (qq(check_sans_domain($domain)));
+	my @log = (sprintf(q(check_sans_domain(%s)),$domain));
 	die("sans identity not defined.")  if ! defined($sansIdentity);
 	die("key empty.") if $sansIdentity eq "";
 	push @log, sprintf "have sans identity, checking: %s", $domain;
@@ -297,8 +299,9 @@ sub check_sans_domain {
 		'Content-type' => 'application/json'
 	];
 
-	my $req = HTTP::Request->new( "GET", sprintf(q(https://isc.sans.edu/api/domainage/%s?json),$domain), $header, $data);
+	my $req = HTTP::Request->new( "GET", sprintf(q(https://isc.sans.edu/api/domainage/%s?json),$domain), $header );
 	my $ua = LWP::UserAgent->new();
+	push @log, q(HTTP::Request);
 	$ua->agent($sansIdentity);
 
 	my $res = $ua->request($req);
@@ -307,7 +310,6 @@ sub check_sans_domain {
 	my $domainAge = $json->decode( $res->content );
 	push @log, q(domain age decoded);
 	push @log, Dumper $domainAge;
-	logToDebug join("\n",@log);
 
 	# hash -> error
 	# array -> result
@@ -319,8 +321,10 @@ sub check_sans_domain {
 
 	} else {
 		print "Domain Age:\n", Dumper $domainAge->[0];
+		push @log, Dumper $domainAge->[0];
 	}
 
+	logToDebug join("\n",@log);
 	return();
 } # check_sans_domain
 

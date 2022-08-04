@@ -47,8 +47,13 @@ sub analyze_url {
 	my @log = (qq(analyze_url($art)));
 
 	my $dom = $uri->host;
-	push @artifacts, $dom unless grep({ $dom eq $_ } @artifacts);
-	netDNS_Lookup($dom);
+	if( grep({ $dom eq $_ } @artifacts) ) {
+		print "$dom is already in \@artifacts\n";
+	} else {
+		print "adding $dom to \@artifacts\n";
+		push @artifacts, $dom;
+		netDNS_Lookup($dom);
+	}
 
 	if ( openURL($art) == 200 ) {
 

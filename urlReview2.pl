@@ -42,7 +42,8 @@ sub analyze_artifact {
 
 sub analyze_url {
 	my ($art) = @_;
-	print "Analyzing url: $art\n";
+	print "\nAnalyzing url: $art\n";
+	print "="x40 . "\n";
 	my $uri = URI->new($art);
 	my @log = (qq(analyze_url($art)));
 
@@ -87,7 +88,8 @@ sub analyze_ip {
 	my ($art) = @_;
 	my @log = (qq(analyze_ip($art)));
 
-	print "Analyzing ip: $art\n";
+	print "\nAnalyzing ip: $art\n";
+	print "="x40 . "\n";
 	if( 
 		( $art eq q(99.83.179.4) ) ||
 		( $art eq q(75.2.78.236) ) ) {
@@ -97,6 +99,7 @@ sub analyze_ip {
 		# check ip against VT
 
 		# check ip against misp
+		whoisIP($art);
 		check_misp($art);
 
 		# check ip against cyber gordon
@@ -106,7 +109,8 @@ sub analyze_ip {
 sub analyze_name {
 	my ($art) = @_;
 
-	print "Analyzing name: $art\n";
+	print "\nAnalyzing name: $art\n";
+	print "="x40 . "\n";
 	# check name against VT
 	# check name against misp
 	check_misp($art);

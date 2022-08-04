@@ -329,3 +329,20 @@ sub check_sans_domain {
 } # check_sans_domain
 
 
+use Net::Whois::IP qw(whoisip_query);
+sub whoisIP() {
+	my ($ip) = @_;
+	my @log = (sprintf(q(whoisIP(%s)),$ip));
+
+	my $response = whoisip_query($ip);
+	push @log, Dumper $response;
+	#print Dumper $response;
+	foreach (sort keys(%{$response}) ) {
+		print "$_ $response->{$_} \n" if $_ =~ m/(Name|Abuse|OriginAS|Email)/;;
+	}
+
+	logToDebug join("\n",@log);
+	return();
+} # whoisIP
+
+

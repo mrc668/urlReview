@@ -171,15 +171,17 @@ sub openURL {
 	logToDebug join("\n",@log);
 	@log=();
 
+	# Log content of page.
+	my $content = $res->content;
+	printf "Content length: %s\n", length($content) ;
+	push @log, "Content length: " . length($content) ;
+	push @log, sprintf "Page content:\n%s", $content;
+	logToDebug join("\n",@log);
+	@log=();
+
 	if( $res->code == 200 ) {
 
 		# Check the outcome of the response
-		my $content = $res->content;
-		printf "Content length: %s\n", length($content) ;
-		push @log, "Content length: " . length($content) ;
-		push @log, sprintf "Page content:\n%s", $content;
-		logToDebug join("\n",@log);
-		@log=();
 		parsePage($content) if length($content) < 3000;
 
 	} elsif( $res->code == 301 || $res->code == 302 ) {
@@ -190,6 +192,14 @@ sub openURL {
 		if( grep({ $redir != $_ } @artifacts) ) {
 			push @artifacts, $redir unless  grep({ $redir  =~ m/$_/ } @dontFollow) ;
 		}
+
+	} elsif( $res->code == 404 || $res->code == 403 ) {
+		printf "No or not available: %s\n", $res->code;
+		push @log, "Page not found or not available ";
+
+	} elsif( $res->code == 500 || $res->code == 501 ) {
+		printf "Server not responding: %s\n", $res->code;
+		push @log, "Server not responding or not available ";
 
 	} else {
 		printf "Unhandled status code: %s\n", $res->code;

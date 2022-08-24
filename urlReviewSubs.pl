@@ -1,5 +1,5 @@
 my @forwarders = qw( cutt.ly bit.ly owl.ly );
-my @dontFollow = qw( www.w3.org facebook.com google.com squarespace-cdn.com instagram.com jquery bootstrap.min.css squarespace.com cloudflare.com );
+my @dontFollow = qw( font-awesome.min.css fonts.gstatic.com yoast.com www.w3.org facebook.com google.com squarespace-cdn.com instagram.com jquery bootstrap.min.css squarespace.com cloudflare.com );
 my @dnsFirewalls = qw( 149.112.121.20 149.112.122.20 162.219.51.2 162.219.52.2);
 
 1;
@@ -108,10 +108,15 @@ sub netDNS_Lookup {
 					! grep({ $rr->address  eq $_ } @artifacts) &&
 					! grep({ $rr->address  eq $_ } @dnsFirewalls)
 				) {
+					# if not in artifacts and not a dns firewall
 					push @artifacts, $rr->address ; 
 					push @log, sprintf "%s adds IP %s to artifacts\n", $passedHost, $rr->address;
 					printf "%s adds IP %s to artifacts\n", $passedHost, $rr->address;
-				} # if not in artifacts
+				} else {
+					push @log, sprintf "%s resolves to %s. Not adding to artifacts\n", $passedHost, $rr->address;
+					printf "%s resolves to %s. Not adding to artifacts\n", $passedHost, $rr->address;
+				}
+
 			} # if rr can address
 		} # foreach
 	} else {
@@ -193,7 +198,7 @@ sub openURL {
 	}
 
 	logToDebug join("\n",@log);
-	return($res->code == 200);
+	return($res->code);
 } # openURL()
 
 sub check_misp {

@@ -76,7 +76,10 @@ sub analyze_url {
 		#   compare output against browser variations
 		# if no:
 		#   add new location to artifacts
+	} else {
+		print "Not checking for wordpress\n";
 	}
+
 
 	# check url against misp
 	check_misp($art);

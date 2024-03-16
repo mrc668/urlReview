@@ -1,6 +1,9 @@
 #!  /usr/bin/python3
 import sys
 
+# Import the whois function from whois.py
+from whois import whois
+
 # Initialize artifacts array
 artifacts = []
 
@@ -99,6 +102,7 @@ def analyze_url(artifact):
 def analyze_domain(artifact):
   """Analyzes a domain name artifact."""
   print(f"Analyzing Domain: {artifact}")
+  whois(artifact)
 
 def analyze_ip(artifact):
   """Analyzes an IP address artifact."""

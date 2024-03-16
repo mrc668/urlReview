@@ -1,8 +1,26 @@
 #!  /usr/bin/python3
 import sys
 
+from dotenv import load_dotenv
+import os
+
 # Import the whois function from whois.py
-from whois import whois
+from virustotal import virustotal_domain_report
+
+
+# Check for .env file and load variables
+if load_dotenv():
+    vt_api_key = os.getenv("vtAPIKey")
+    misp_api_key = os.getenv("mispAPIKey")
+    sans_identity = os.getenv("sansIdentity")
+
+    # Use the loaded variables (example printing)
+    print(f"VirusTotal API Key: {vt_api_key}")
+    print(f"MISP API Key: {misp_api_key}")
+    print(f"SANS Identity: {sans_identity}")
+else:
+    print("Error: .env file not found")
+
 
 # Initialize artifacts array
 artifacts = []
@@ -102,7 +120,7 @@ def analyze_url(artifact):
 def analyze_domain(artifact):
   """Analyzes a domain name artifact."""
   print(f"Analyzing Domain: {artifact}")
-  whois(artifact)
+  virustotal_domain_report(artifact,vt_api_key)
 
 def analyze_ip(artifact):
   """Analyzes an IP address artifact."""

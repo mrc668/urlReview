@@ -1,49 +1,41 @@
-import socket
-import re
+import requests
+from bs4 import BeautifulSoup  # For parsing HTML response
 
 def whois(domain):
-  """Queries whois servers for a domain and reports specific fields."""
+  """Queries a web-based whois service for domain information and reports specific fields."""
 
-  # Base whois server URL
-  whois_server = f"whois.domaintools.com/{domain}"
+  # Replace with your preferred whois service URL (e.g., https://whois.domaintools.com/)
+  whois_url = f"https://whois.domaintools.com/{domain}"
 
   try:
-    # Connect to whois server
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-      s.connect(('whois.domaintools.com', 43))
-      s.sendall(f"whois {domain}\r\n".encode('utf-8'))
-      response = b''
-      while True:
-        chunk = s.recv(1024)
-        if not chunk:
-          break
-        response += chunk
+    response = requests.get(whois_url)
+    response.raise_for_status()  # Raise exception for non-2xx status codes
 
-    # Decode response and search for relevant fields
-    decoded_response = response.decode('utf-8')
-    email_pattern = r"(?:[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z]{2,})"
-    phone_pattern = r"[\+\d\-\(\) ]{7,}"  #簡易な電話番号パターン (can be refined)
-    creation_pattern = r"Creation Date: (.*)"
+    # Parse HTML response (adjust selectors based on the service)
+    soup = BeautifulSoup(response.content, 'html.parser')
+    email_elements = soup.find_all('span', text='Email:')
+    phone_elements = soup.find_all('span', text='Phone:')
+    creation_date_element = soup.find('span', text='Creation Date:')
 
-    for line in decoded_response.splitlines():
-      # Extract email addresses
-      matches = re.findall(email_pattern, line)
-      if matches:
-        for email in matches:
-          print(f"  Email: {email}")
+    # Extract information (adjust based on HTML structure)
+    emails = [element.find_next_sibling('span').text.strip() for element in email_elements]
+    phones = [element.find_next_sibling('span').text.strip() for element in phone_elements]
+    creation_date = creation_date_element.find_next_sibling('span').text.strip() if creation_date_element else None
 
-      # Extract phone numbers (adjust pattern for specific needs)
-      matches = re.findall(phone_pattern, line)
-      if matches:
-        for phone in matches:
-          print(f"  Phone: {phone}")
+    # Print information
+    if emails:
+      print(f"  Emails:")
+      for email in emails:
+        print(f"    - {email}")
+    if phones:
+      print(f"  Phones:")
+      for phone in phones:
+        print(f"    - {phone}")
+    if creation_date:
+      print(f"  Creation Date: {creation_date}")
 
-      # Extract creation date
-      match = re.search(creation_pattern, line)
-      if match:
-        print(f"  Creation Date: {match.group(1)}")
-
-  except Exception as e:
-    print(f"Error querying whois server: {e}")
-
+  except requests.exceptions.RequestException as e:
+    print(f"Error fetching whois information: {e}")
+  except AttributeError:
+    print(f"Error parsing whois response (may require adjustments for service structure)")
 

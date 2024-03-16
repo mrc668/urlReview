@@ -19,17 +19,23 @@ def is_domain(artifact):
 
 import requests
 from urllib.parse import urljoin
+import json
 
 def fetch_and_analyze_url(url):
   """Fetches a URL, analyzes the response, and delegates further actions."""
 
+  session = requests.Session()  # Create a session to manage cookies
+  compatible_user_agent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.88 Safari/537.36'
+  headers = {'User-Agent': compatible_user_agent}
+
   try:
-    response = requests.get(url)
+    response = session.get(url, headers=headers)
     response.raise_for_status()  # Raise exception for non-2xx status codes
 
     # Successful response (2xx)
     print(f"Analyzing URL: {url} (Status Code: {response.status_code})")
-    analyze_body(response.status_code, response.text)
+    save_body(url, response.text)
+    analyze_body(response.status_code, response.text, session.cookies)
 
   except requests.exceptions.RequestException as e:
     print(f"Error fetching URL: {url} - {e}")
@@ -45,13 +51,15 @@ def fetch_and_analyze_url(url):
     else:
       # Handle other error codes (4xx, 5xx)
       print(f"Error fetching URL: {url} (Status Code: {status_code})")
+      save_body(url, e.response.text)
       analyze_body(status_code, e.response.text)  # Optionally analyze error body
 
 import re
 
-def analyze_body(status_code, body):
+def analyze_body(status_code, body, cookies):
   """Analyzes the response body based on the status code and length."""
 
+  print(f"Cookies passed to analyze_body: {cookies}")  # Access cookies in this function
   body_length = len(body)
   print(f"Body length: {body_length} characters")
 
@@ -66,6 +74,16 @@ def analyze_body(status_code, body):
         artifacts.append(url)  # Add found URLs to artifacts
     else:
       print("No URLs found in the body.")
+
+def save_body(url, body):
+  """Saves the response body to a file based on the URL."""
+  # Encode URL for filename (optional)
+  encoded_url = requests.utils.quote(url, safe='')  # Encode everything
+  filename = f"{encoded_url}.html"  # Adjust extension as needed
+
+  with open(filename, 'w', encoding='utf-8') as f:
+    f.write(body)
+  print(f"Body saved to: {filename}")
 
 def analyze_url(artifact):
   """Analyzes a URL artifact (assuming http/https)."""

@@ -1,4 +1,6 @@
 *log
+*html
+part*.py
 *swp
 env
 .env

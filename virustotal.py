@@ -11,6 +11,7 @@ def virustotal_domain_report(domain, api_key):
     response = requests.get(url, headers=headers)
     response.raise_for_status()
 
+    save_body(url, response.text)
     data = response.json()
 
     # Get whois information

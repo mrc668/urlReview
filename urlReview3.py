@@ -3,6 +3,10 @@ import sys
 
 from dotenv import load_dotenv
 import os
+#import dnspython as dns
+#import dns.resolver
+import socket
+#import whois
 
 import requests
 import pprint
@@ -19,27 +23,19 @@ def virustotal_domain_report(domain, api_key):
     response = requests.get(url, headers=headers)
     response.raise_for_status()
 
-    save_body(url, response.text)
+    save_body(url, response.text, "log/vt")
     data = response.json()
-        #print(f"data: {whois}")
-        #pprint.pprint(data)
-    # Access the nested dictionary
-    actual_data = data.get("data", {})
+    domain_id = data["data"]["id"]
+    whois_data = data["data"]["attributes"]["whois"].splitlines()  # Split into lines
+    for line in whois_data:
+      if line.startswith("Creation Date: "):  # Check if line starts with "Creation Date: "
+        print(line)  # Print the matching line
+      elif "@" in line:  # Check for email addresses
+        print(line)  # Print the matching line
+      elif re.match(r": [\d\+\-\(\)]{9,25}$", line):  # Check for a phone number
+        print(line)  # Print the matching line
 
-    # Check if whois information exists
-    #whois_data = actual_data.get("whois")
-    whois = actual_data.get("whois")
-    pprint.pprint(whois)
 
-    # Get whois information
-    whois = data.get("whois") 
-    print(f"whois data: {whois}")
-
-    if whois:
-      print("WHOIS Information:")
-      print_whois_fields(whois)
-    else:
-      print("WHOIS Information is unavailable.")
 
 #    # Get detections count and engines
 #    detections = data.get("attributes").get("last_analysis_results").get("detected_urls")
@@ -123,8 +119,9 @@ def fetch_and_analyze_url(url):
     response.raise_for_status()  # Raise exception for non-2xx status codes
 
     # Successful response (2xx)
+    print("=" * 40)
     print(f"Analyzing URL: {url} (Status Code: {response.status_code})")
-    save_body(url, response.text)
+    save_body(url, response.text, "log")
     analyze_body(response.status_code, response.text, session.cookies)
 
   except requests.exceptions.RequestException as e:
@@ -165,21 +162,45 @@ def analyze_body(status_code, body, cookies):
     else:
       print("No URLs found in the body.")
 
-def save_body(url, body):
+def save_body(url, body, saveDir):
   """Saves the response body to a file based on the URL."""
+
+  # Access logDir from .env file
+  logDir = os.getenv("logDir")
+
   # Encode URL for filename (optional)
   encoded_url = requests.utils.quote(url, safe='')  # Encode everything
   filename = f"{encoded_url}.html"  # Adjust extension as needed
 
-  with open(filename, 'w', encoding='utf-8') as f:
+  # Construct full path with logDir and saveDir
+  full_path = os.path.join(logDir, saveDir, filename)
+
+  # Create the directory structure if it doesn't exist
+  os.makedirs(os.path.dirname(full_path), exist_ok=True)
+
+  with open(full_path, 'w', encoding='utf-8') as f:
     f.write(body)
-  print(f"Body saved to: {filename}")
+  print(f"Body saved to: {full_path}")
+
+def whoisLookup(artifact):
+  # Expect a domain or an ip
+  try:
+    w = whois.whois(artifact)
+
+    # Access specific WHOIS data
+    print(f"Domain Name: {w.domain_name}")
+    print(f"Creation Date: {w.creation_date}")
+    print(f"Registrar: {w.registrar}")
+
+  except Exception as e:
+    print(f"An error occurred during WHOIS lookup: {e}")
 
 def analyze_url(artifact):
   """Analyzes a URL artifact (assuming http/https)."""
   from urllib.parse import urlparse
   parsed_url = urlparse(artifact)
-  artifacts.append(parsed_url.netloc)
+  #artifacts.append(parsed_url.netloc)
+  analyze_domain(parsed_url.netloc)
   print(f"Analyzing URL: {artifact}")
   print(f"Proto: {parsed_url.scheme}")
   print(f"Host: {parsed_url.netloc} ")
@@ -188,11 +209,20 @@ def analyze_url(artifact):
 
 def analyze_domain(artifact):
   """Analyzes a domain name artifact."""
+  # Check for name server in .env
+  name_server = os.getenv("nameServer")
+
+  addr = socket.gethostbyname(artifact)
+  analyze_ip(addr)
+
+  print("=" * 40)
   print(f"Analyzing Domain: {artifact}")
+  #whoisLookup(artifact)
   virustotal_domain_report(artifact,vt_api_key)
 
 def analyze_ip(artifact):
   """Analyzes an IP address artifact."""
+  print("=" * 40)
   print(f"Analyzing IP: {artifact}")
 
 

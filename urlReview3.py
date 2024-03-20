@@ -14,16 +14,21 @@ import pprint
 import ssl
 from datetime import datetime
 
-def save_ssl_certificate(domain, port, log_dir):
+def save_ssl_certificate(domain, port=443, log_dir="logs/cert"):
   """
   Establishes an SSL connection, saves the certificate, and examines its chain.
+
+  Args:
+    domain: The domain name to connect to.
+    port: The port number for the connection (default 443).
+    log_dir: The directory to save the certificate file (default "logs/cert").
   """
   print("-" * 40)
-  print(f"Analyzing certificate: {domain}")
-  context = ssl.create_default_context()
-
   try:
-    # Connect to the server
+    context = ssl.create_default_context()
+    print(f"Analyzing certificate: {domain}")
+
+    # Connect to the server with timeout
     with socket.create_connection((domain, port)) as sock:
       sock.settimeout(5)  # Set a timeout for the connection
       conn = context.wrap_socket(sock)
@@ -31,14 +36,11 @@ def save_ssl_certificate(domain, port, log_dir):
       # Get the certificate chain
       certificate = conn.getpeercert()
 
-      # Construct full path with logDir and saveDir
-      full_path = os.path.join(logDir, log_dir )
-
       # Create the directory structure if it doesn't exist
-      os.makedirs(full_path, exist_ok=True)
+      os.makedirs(log_dir, exist_ok=True)
 
       # Save the certificate
-      with open(f"{full_path}/{domain}.pem", "wb") as f:
+      with open(os.path.join(log_dir, f"{domain}.pem"), "wb") as f:
         f.write(ssl.DER_cert_to_PEM_cert(certificate))
 
       # Examine the certificate chain
@@ -250,7 +252,11 @@ def analyze_url(artifact):
   print(f"Proto: {parsed_url.scheme}")
   print(f"Host: {parsed_url.netloc} ")
   print(f"Path: {parsed_url.path}")
-  save_ssl_certificate(parsed_url.netloc,parsed_url.port,"log/cert")
+  if parsed_url.scheme == "https":
+    save_ssl_certificate(parsed_url.netloc,parsed_url.port,"log/cert")
+  else:
+    print(f"Skipping certificate check for non-HTTPS URL: {artifact}")
+
   fetch_and_analyze_url(artifact)
 
 def analyze_domain(artifact):

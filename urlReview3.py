@@ -11,6 +11,51 @@ import socket
 import requests
 import pprint
 
+import ssl
+from datetime import datetime
+
+def save_ssl_certificate(domain, port, log_dir):
+  """
+  Establishes an SSL connection, saves the certificate, and examines its chain.
+  """
+  print("-" * 40)
+  print(f"Analyzing certificate: {domain}")
+  context = ssl.create_default_context()
+
+  try:
+    # Connect to the server
+    with socket.create_connection((domain, port)) as sock:
+      sock.settimeout(5)  # Set a timeout for the connection
+      conn = context.wrap_socket(sock)
+
+      # Get the certificate chain
+      certificate = conn.getpeercert()
+
+      # Construct full path with logDir and saveDir
+      full_path = os.path.join(logDir, log_dir )
+
+      # Create the directory structure if it doesn't exist
+      os.makedirs(full_path, exist_ok=True)
+
+      # Save the certificate
+      with open(f"{full_path}/{domain}.pem", "wb") as f:
+        f.write(ssl.DER_cert_to_PEM_cert(certificate))
+
+      # Examine the certificate chain
+      print(f"--- Certificate Chain for {domain} ---")
+      for cert in certificate:
+        # Extract and format start and end dates
+        start_date = datetime.strptime(cert['notBefore'], "%b %d %H:%M:%S %Y %Z").strftime("%Y-%m-%d")
+        end_date = datetime.strptime(cert['notAfter'], "%b %d %H:%M:%S %Y %Z").strftime("%Y-%m-%d")
+
+        # Check certificate validity (based on current date)
+        is_valid = datetime.now() >= datetime.strptime(start_date, "%Y-%m-%d") and datetime.now() <= datetime.strptime(end_date, "%Y-%m-%d")
+        print(f"- Issuer: {cert['issuer']}")
+        print(f"  - Valid From: {start_date} (IS VALID: {is_valid})")
+        print(f"  - Valid Until: {end_date}")
+
+  except (socket.timeout, ssl.SSLError) as e:
+    print(f"Error connecting to {domain}:{port}: {e}")
 
 def virustotal_domain_report(domain, api_key):
   """Retrieves domain information from VirusTotal and reports relevant details."""
@@ -205,6 +250,7 @@ def analyze_url(artifact):
   print(f"Proto: {parsed_url.scheme}")
   print(f"Host: {parsed_url.netloc} ")
   print(f"Path: {parsed_url.path}")
+  save_ssl_certificate(parsed_url.netloc,parsed_url.port,"log/cert")
   fetch_and_analyze_url(artifact)
 
 def analyze_domain(artifact):

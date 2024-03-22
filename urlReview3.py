@@ -28,11 +28,20 @@ def getssl(host: str, port: int):
         print(f"Error: {e}")
 
 def save_certificate_to_file(cert_data: bytes, host: str):
-    try:
-        with open(f"{host}.pem", "wb") as cert_file:
-            cert_file.write(cert_data)
-        print(f"Certificate saved to {host}.pem")
-    except OSError:
+  # Access logDir from .env file
+  logDir = os.getenv("logDir")
+  full_path = os.path.join(logDir, "log/cert" )
+
+  # Create the directory structure if it doesn't exist
+  os.makedirs(full_path, exist_ok=True)
+
+  try:
+      with open(os.path.join(full_path, f"{host}.pem"), "wb") as cert_file:
+          cert_file.write("-----BEGIN CERTIFICATE-----\n".encode())
+          cert_file.write(cert_data)
+          cert_file.write("-----END CERTIFICATE-----\n".encode())
+      print(f"Certificate saved to {host}.pem")
+  except OSError:
         print(f"Error saving certificate to {host}.pem")
 
 def analyze_certificate(cert_data: bytes, host: str):

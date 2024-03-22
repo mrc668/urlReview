@@ -12,52 +12,41 @@ import requests
 import pprint
 
 import ssl
+from cryptography import x509
+from cryptography.hazmat.backends import default_backend
 from datetime import datetime
 
-def save_ssl_certificate(domain, port=443, log_dir="logs/cert"):
-  """
-  Establishes an SSL connection, saves the certificate, and examines its chain.
+def getssl(host: str, port: int):
+    try:
+        context = ssl.create_default_context()
+        with socket.create_connection((host, port)) as sock:
+            with context.wrap_socket(sock, server_hostname=host) as ssock:
+                cert = ssock.getpeercert(binary_form=True)
+                save_certificate_to_file(cert, host)
+                analyze_certificate(cert, host)
+    except (ssl.CertificateError, ssl.SSLError, ConnectionError) as e:
+        print(f"Error: {e}")
 
-  Args:
-    domain: The domain name to connect to.
-    port: The port number for the connection (default 443).
-    log_dir: The directory to save the certificate file (default "logs/cert").
-  """
-  print("-" * 40)
-  try:
-    context = ssl.create_default_context()
-    print(f"Analyzing certificate: {domain}")
+def save_certificate_to_file(cert_data: bytes, host: str):
+    try:
+        with open(f"{host}.pem", "wb") as cert_file:
+            cert_file.write(cert_data)
+        print(f"Certificate saved to {host}.pem")
+    except OSError:
+        print(f"Error saving certificate to {host}.pem")
 
-    # Connect to the server with timeout
-    with socket.create_connection((domain, port)) as sock:
-      sock.settimeout(5)  # Set a timeout for the connection
-      conn = context.wrap_socket(sock)
-
-      # Get the certificate chain
-      certificate = conn.getpeercert()
-
-      # Create the directory structure if it doesn't exist
-      os.makedirs(log_dir, exist_ok=True)
-
-      # Save the certificate
-      with open(os.path.join(log_dir, f"{domain}.pem"), "wb") as f:
-        f.write(ssl.DER_cert_to_PEM_cert(certificate))
-
-      # Examine the certificate chain
-      print(f"--- Certificate Chain for {domain} ---")
-      for cert in certificate:
-        # Extract and format start and end dates
-        start_date = datetime.strptime(cert['notBefore'], "%b %d %H:%M:%S %Y %Z").strftime("%Y-%m-%d")
-        end_date = datetime.strptime(cert['notAfter'], "%b %d %H:%M:%S %Y %Z").strftime("%Y-%m-%d")
-
-        # Check certificate validity (based on current date)
-        is_valid = datetime.now() >= datetime.strptime(start_date, "%Y-%m-%d") and datetime.now() <= datetime.strptime(end_date, "%Y-%m-%d")
-        print(f"- Issuer: {cert['issuer']}")
-        print(f"  - Valid From: {start_date} (IS VALID: {is_valid})")
-        print(f"  - Valid Until: {end_date}")
-
-  except (socket.timeout, ssl.SSLError) as e:
-    print(f"Error connecting to {domain}:{port}: {e}")
+def analyze_certificate(cert_data: bytes, host: str):
+    print("-" * 40)
+    print(f"Analyzing certificate: {host}")
+    try:
+        cert = x509.load_der_x509_certificate(cert_data, default_backend())
+        subject = cert.subject.rfc4514_string()
+        expiration_date = cert.not_valid_after
+        print(f"Certificate for {host}:")
+        print(f"Subject: {subject}")
+        print(f"Expiration Date: {expiration_date}")
+    except ValueError:
+        print("Error: Invalid certificate data.")
 
 def virustotal_domain_report(domain, api_key):
   """Retrieves domain information from VirusTotal and reports relevant details."""
@@ -250,10 +239,11 @@ def analyze_url(artifact):
   analyze_domain(parsed_url.netloc)
   print(f"Analyzing URL: {artifact}")
   print(f"Proto: {parsed_url.scheme}")
-  print(f"Host: {parsed_url.netloc} ")
+  print(f"Host: {parsed_url.netloc}")
   print(f"Path: {parsed_url.path}")
   if parsed_url.scheme == "https":
-    save_ssl_certificate(parsed_url.netloc,parsed_url.port,"log/cert")
+    port=parsed_url.port or 443
+    getssl(parsed_url.netloc,port)
   else:
     print(f"Skipping certificate check for non-HTTPS URL: {artifact}")
 

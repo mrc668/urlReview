@@ -17,15 +17,25 @@ from cryptography.hazmat.backends import default_backend
 from datetime import datetime
 
 def getssl(host: str, port: int):
+    """Retrieves and analyzes the SSL certificate from the specified host and port.
+
+    Handles cases where the remote site is unavailable.
+    """
+
     try:
         context = ssl.create_default_context()
-        with socket.create_connection((host, port)) as sock:
+        with socket.create_connection((host, port), timeout=3) as sock:  # Set a timeout
             with context.wrap_socket(sock, server_hostname=host) as ssock:
                 cert = ssock.getpeercert(binary_form=True)
                 save_certificate_to_file(cert, host)
                 analyze_certificate(cert, host)
-    except (ssl.CertificateError, ssl.SSLError, ConnectionError) as e:
-        print(f"Error: {e}")
+
+    except (ssl.CertificateError, ssl.SSLError) as e:
+        print(f"SSL error: {e}")
+    except ConnectionError as e:
+        print(f"Connection error: Remote site is unavailable: {e}. Cannot retreive SSL Certificate.")
+    except socket.timeout:
+        print("Timeout error: Remote site is not responding. Cannot retreive SSL Certificate.")
 
 def save_certificate_to_file(cert_data: bytes, host: str):
   # Access logDir from .env file
@@ -71,16 +81,17 @@ def virustotal_domain_report(domain, api_key):
     save_body(url, response.text, "log/vt")
     data = response.json()
     domain_id = data["data"]["id"]
-    whois_data = data["data"]["attributes"]["whois"].splitlines()  # Split into lines
-    for line in whois_data:
-      if line.startswith("Creation Date: "):  # Check if line starts with "Creation Date: "
-        print(line)  # Print the matching line
-      elif "@" in line:  # Check for email addresses
-        print(line)  # Print the matching line
-      elif re.match(r": [\d\+\-\(\)]{9,25}$", line):  # Check for a phone number
-        print(line)  # Print the matching line
-
-
+    try: 
+      whois_data = data["data"]["attributes"]["whois"].splitlines()  # Split into lines
+      for line in whois_data:
+        if line.startswith("Creation Date: "):  # Check if line starts with "Creation Date: "
+          print(line)  # Print the matching line
+        elif "@" in line:  # Check for email addresses
+          print(line)  # Print the matching line
+        elif re.match(r": [\d\+\-\(\)]{9,25}$", line):  # Check for a phone number
+          print(line)  # Print the matching line
+    except KeyError:
+      print("WHOIS data not available from VirusTotal for this domain.")
 
 #    # Get detections count and engines
 #    detections = data.get("attributes").get("last_analysis_results").get("detected_urls")
@@ -206,6 +217,11 @@ def analyze_body(status_code, body, cookies):
         artifacts.append(url)  # Add found URLs to artifacts
     else:
       print("No URLs found in the body.")
+      
+  # Search for WordPress (case-insensitive, regardless of body size)
+  if "wordpress" in body.lower():
+    print("Found potential WordPress usage in the body.")
+
 
 def save_body(url, body, saveDir):
   """Saves the response body to a file based on the URL."""

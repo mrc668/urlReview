@@ -15,7 +15,66 @@ import urllib.parse
 import ssl
 from cryptography import x509
 from cryptography.hazmat.backends import default_backend
+import asn1crypto
+from asn1crypto import x509
 from datetime import datetime
+
+import datetime
+
+
+def dissect_certificate(host, port):
+    """
+    Dissects a certificate from the given host and port, handling potential SSL errors.
+
+    Args:
+        host (str): The hostname of the server.
+        port (int): The port number of the server.
+
+    Returns:
+        tuple: A tuple containing the subject (None if error occurs),
+               notBefore (None if error occurs), and notAfter (None if error occurs).
+    """
+
+    try:
+        context = ssl.create_default_context()
+        with socket.create_connection((host, port), timeout=3) as sock:
+            with context.wrap_socket(sock, server_hostname=host) as ssock:
+                cert_der = ssock.getpeercert(binary_form=True)
+
+        cert = asn1crypto.x509.Certificate.load(cert_der)
+
+        subject = cert['tbs_certificate']['subject'].human_friendly
+        not_before = cert['tbs_certificate']['validity']['not_before'].native
+        not_after = cert['tbs_certificate']['validity']['not_after'].native
+
+        # Access logDir from .env file
+        logDir = os.getenv("logDir")
+        full_path = os.path.join(logDir, "cert" )
+
+        # Create the directory structure if it doesn't exist
+        os.makedirs(full_path, exist_ok=True)
+
+        # use openssl to examine the certificate
+        # openssl x509 -in log/cert/example.com.pem -text | less
+        try:
+            with open(os.path.join(full_path, f"{host}.pem"), "wb") as f:
+                f.write(cert_der)
+        except OSError:
+                print(f"Error saving certificate to {host}.pem")
+
+
+        return subject, not_before, not_after
+    except ssl.SSLError as e:
+        print(f"Error connecting or verifying certificate: {e}")
+        return None, None, None
+
+
+'''
+# Example usage:
+host = 'example.com'
+port = 443
+subject, not_before, not_after = dissect_certificate(host, port)
+'''
 
 def getssl(host: str, port: int):
     """Retrieves and analyzes the SSL certificate from the specified host and port.
@@ -41,7 +100,7 @@ def getssl(host: str, port: int):
 def save_certificate_to_file(cert_data: bytes, host: str):
   # Access logDir from .env file
   logDir = os.getenv("logDir")
-  full_path = os.path.join(logDir, "log/cert" )
+  full_path = os.path.join(logDir, "cert" )
 
   # Create the directory structure if it doesn't exist
   os.makedirs(full_path, exist_ok=True)
@@ -84,8 +143,9 @@ def cyberGordon(artifact):
         requests.exceptions.RequestException: If an error occurs during the request.
     """
 
-    url = "https://www.cybergordon.com/form"  # Assuming a hypothetical form URL
+    url = "https://cybergordon.com/request/form"  # Assuming a hypothetical form URL
     form_data = {"obs": artifact}
+    print(f"CyberGordon: {artifact}")
 
     try:
         # Send POST request with form data (simulating interaction)
@@ -96,11 +156,15 @@ def cyberGordon(artifact):
         if response.status_code == 302:
             cgid = response.headers.get("Location")  # Extract redirect URL
             encoded_cgid = urllib.parse.quote(cgid, safe="")  # URL encode cgid
+            url = "https://cybergordon.com"  # Assuming a hypothetical form URL
+            try:
+                cg_result = requests.get( url + cgid)
 
-            # Simulated log saving (without actual content fetching)
-            print(f"Simulated cgid: {encoded_cgid}")
-            with open(f"{logs_dir}/cgid", "w") as log_file:
-                log_file.write(encoded_cgid)  # Write simulated cgid to log file
+                # Simulated log saving (without actual content fetching)
+                print(f"Simulated cgid: {encoded_cgid}")
+                save_body(artifact, cg_result.text, "cg")
+            except KeyError:
+                print("did not get cybergordon report.")
         else:
             print(f"Unexpected response status code: {response.status_code}")
 
@@ -118,7 +182,7 @@ def virustotal_domain_report(domain, api_key):
     response = requests.get(url, headers=headers)
     response.raise_for_status()
 
-    save_body(url, response.text, "log/vt")
+    save_body(url, response.text, "vt")
     data = response.json()
     domain_id = data["data"]["id"]
     try: 
@@ -217,7 +281,7 @@ def fetch_and_analyze_url(url):
     # Successful response (2xx)
     print("=" * 40)
     print(f"Analyzing URL: {url} (Status Code: {response.status_code})")
-    save_body(url, response.text, "log")
+    save_body(url, response.text, ".")
     analyze_body(response.status_code, response.text, session.cookies)
 
   except requests.exceptions.RequestException as e:
@@ -312,10 +376,15 @@ def analyze_url(artifact):
   print(f"Path: {parsed_url.path}")
   if parsed_url.scheme == "https":
     port=parsed_url.port or 443
-    getssl(parsed_url.netloc,port)
+    #getssl(parsed_url.netloc,port)
+    subject, not_before, not_after = dissect_certificate(parsed_url.netloc,port)
+    print(f"Cert subject: {subject}")
+    print(f"Cert issued: {not_before}")
+    print(f"Cert expires: {not_after}")
   else:
     print(f"Skipping certificate check for non-HTTPS URL: {artifact}")
 
+  cyberGordon(artifact)
   fetch_and_analyze_url(artifact)
 
 def analyze_domain(artifact):

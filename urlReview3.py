@@ -10,6 +10,7 @@ import socket
 
 import requests
 import pprint
+import urllib.parse
 
 import ssl
 from cryptography import x509
@@ -66,6 +67,45 @@ def analyze_certificate(cert_data: bytes, host: str):
         print(f"Expiration Date: {expiration_date}")
     except ValueError:
         print("Error: Invalid certificate data.")
+
+def cyberGordon(artifact):
+    """
+    Processes an artifact (potentially a domain name) using a simulated interaction
+    (avoiding web scraping) and adheres to ethical guidelines.
+
+    Args:
+        artifact (str): The artifact (e.g., domain name) to process.
+        logs_dir (str, optional): The directory to save logs. Defaults to "logs".
+
+    Returns:
+        None
+
+    Raises:
+        requests.exceptions.RequestException: If an error occurs during the request.
+    """
+
+    url = "https://www.cybergordon.com/form"  # Assuming a hypothetical form URL
+    form_data = {"obs": artifact}
+
+    try:
+        # Send POST request with form data (simulating interaction)
+        response = requests.post(url, data=form_data, allow_redirects=False)
+        response.raise_for_status()  # Raise an exception for non-2xx status codes
+
+        # Check if the response is a 302 redirect (simulated behavior)
+        if response.status_code == 302:
+            cgid = response.headers.get("Location")  # Extract redirect URL
+            encoded_cgid = urllib.parse.quote(cgid, safe="")  # URL encode cgid
+
+            # Simulated log saving (without actual content fetching)
+            print(f"Simulated cgid: {encoded_cgid}")
+            with open(f"{logs_dir}/cgid", "w") as log_file:
+                log_file.write(encoded_cgid)  # Write simulated cgid to log file
+        else:
+            print(f"Unexpected response status code: {response.status_code}")
+
+    except requests.exceptions.RequestException as e:
+        print(f"Error making request: {e}")
 
 def virustotal_domain_report(domain, api_key):
   """Retrieves domain information from VirusTotal and reports relevant details."""
@@ -201,6 +241,8 @@ import re
 
 def analyze_body(status_code, body, cookies):
   """Analyzes the response body based on the status code and length."""
+  print("-" * 40)
+  print("Analyzing body: ")
 
   print(f"Cookies passed to analyze_body: {cookies}")  # Access cookies in this function
   body_length = len(body)
@@ -258,6 +300,8 @@ def whoisLookup(artifact):
 
 def analyze_url(artifact):
   """Analyzes a URL artifact (assuming http/https)."""
+  print("-" * 40)
+  print(f"Analyzing url: {artifact} ")
   from urllib.parse import urlparse
   parsed_url = urlparse(artifact)
   #artifacts.append(parsed_url.netloc)
@@ -277,10 +321,22 @@ def analyze_url(artifact):
 def analyze_domain(artifact):
   """Analyzes a domain name artifact."""
   # Check for name server in .env
-  name_server = os.getenv("nameServer")
+  #name_server = os.getenv("nameServer")
 
-  addr = socket.gethostbyname(artifact)
-  analyze_ip(addr)
+  #addr = socket.gethostbyname(artifact)
+  #artifacts.append(addr)
+  #analyze_ip(addr)
+
+  try:
+    addr = socket.gethostbyname(artifact)
+    artifacts.append(addr)
+  except socket.gaierror as e:
+    print(f"Error resolving hostname: {e}")
+    # Handle the error, e.g., return None, raise a custom exception, etc.
+  except Exception as e:
+    print(f"Unexpected error: {e}")
+    # Handle unexpected errors
+
 
   print("=" * 40)
   print(f"Analyzing Domain: {artifact}")
@@ -298,7 +354,7 @@ if len(sys.argv) > 1:
     artifacts.extend(sys.argv[1:])  # Use extend to add each argument individually
 
     for artifact in artifacts:
-        #print(f"Analyzing: {artifact}")
+        print(f"Analyzing: {artifact}")
         #print(type(artifact))  # Should print <class 'str'>
         """Analyzes the provided artifact based on its format."""
         if artifact.startswith("http") or artifact.startswith("https"):

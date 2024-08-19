@@ -21,6 +21,87 @@ from datetime import datetime
 
 import datetime
 
+import ipaddress
+import re
+
+from bs4 import BeautifulSoup
+
+def is_wordpress(html_content, original_url=None):
+    """
+    Determines if the given HTML content is from a WordPress site and extracts version information.
+
+    Args:
+        html_content (str): The HTML content of the webpage.
+        original_url (str, optional): The original URL of the webpage. Defaults to None.
+
+    Returns:
+        tuple: A tuple containing a boolean indicating if it's WordPress,
+               and a dictionary of version information (or None if not WordPress).
+    """
+
+    soup = BeautifulSoup(html_content, 'html.parser')
+
+    # Check for common WordPress elements
+    wordpress_indicators = [
+        'wp-content',
+        'wp-admin',
+        'wp-includes',
+        'generator',
+        'wp-json'
+    ]
+    found_indicators = [indicator in str(soup) for indicator in wordpress_indicators]
+
+    if not any(found_indicators):
+        return False, None
+
+    # Look for version information in meta tags, comments, or generator tags
+    version_regex = r'WordPress/(\d+\.\d+\.\d+)'
+    version_matches = re.findall(version_regex, str(soup))
+
+    if version_matches:
+        version = version_matches[0]
+    else:
+        # If no version found, try additional checks (e.g., inspecting JavaScript files)
+        if original_url:
+            # Make additional requests to specific URLs (e.g., wp-json/wp/v2/posts)
+            # and extract version information from the response
+            pass
+        version = None
+
+    return True, {'version': version}
+
+
+def get_virustotal_base_url(string):
+    """
+    Determines the appropriate VirusTotal API base URL based on the input string.
+
+    Args:
+        string (str): The input string to be analyzed.
+
+    Returns:
+        str: The VirusTotal API base URL for the given input type.
+    """
+  #base_url = "https://www.virustotal.com/api/v3/domains/{}"
+
+    if is_valid_ip(string):
+        return "https://www.virustotal.com/api/v3/ip_addresses/{}"
+    elif is_valid_url(string):
+        return "https://www.virustotal.com/api/v3/urls/{}"
+    else:
+        return "https://www.virustotal.com/api/v3/domains/{}"
+
+def is_valid_ip(string):
+    """Checks if the given string is a valid IP address."""
+    try:
+        ipaddress.ip_address(string)
+        return True
+    except ValueError:
+        return False
+
+def is_valid_url(string):
+    """Checks if the given string is a valid URL (basic check)."""
+    url_pattern = re.compile(r"^(?:http(s)?:\/\/)?[\w.-]+(?:\.[\w.-]+)+[\w\-._~:/?#\[\]@!\$&'\(\)\*\+,;=.]+$")
+    return bool(url_pattern.match(string))
 
 def dissect_certificate(host, port):
     """
@@ -43,9 +124,14 @@ def dissect_certificate(host, port):
 
         cert = asn1crypto.x509.Certificate.load(cert_der)
 
-        subject = cert['tbs_certificate']['subject'].human_friendly
-        not_before = cert['tbs_certificate']['validity']['not_before'].native
-        not_after = cert['tbs_certificate']['validity']['not_after'].native
+        val = cert['tbs_certificate']['subject'].human_friendly
+        print(f"Subject: {val}")
+        val = cert['tbs_certificate']['issuer'].human_friendly
+        print(f"Issuer: {val}")
+        val = cert['tbs_certificate']['validity']['not_before'].native
+        print(f"Issued: {val}")
+        val = cert['tbs_certificate']['validity']['not_after'].native
+        print(f"Expires: {val}")
 
         # Access logDir from .env file
         logDir = os.getenv("logDir")
@@ -63,10 +149,10 @@ def dissect_certificate(host, port):
                 print(f"Error saving certificate to {host}.pem")
 
 
-        return subject, not_before, not_after
+        return 
     except ssl.SSLError as e:
         print(f"Error connecting or verifying certificate: {e}")
-        return None, None, None
+        return 
 
 
 '''
@@ -174,7 +260,7 @@ def cyberGordon(artifact):
 def virustotal_domain_report(domain, api_key):
   """Retrieves domain information from VirusTotal and reports relevant details."""
 
-  base_url = "https://www.virustotal.com/api/v3/domains/{}"
+  base_url = get_virustotal_base_url(domain)
   headers = {"x-apikey": api_key}
   url = base_url.format(domain)
 
@@ -250,6 +336,7 @@ else:
 # Initialize artifacts array
 artifacts = []
 
+'''
 def is_ip(artifact):
   """Checks if the artifact is a valid IP address."""
   try:
@@ -258,6 +345,7 @@ def is_ip(artifact):
     return True
   except ValueError:
     return False
+'''
 
 def is_domain(artifact):
   """Checks if the artifact matches a domain name format."""
@@ -324,9 +412,9 @@ def analyze_body(status_code, body, cookies):
     else:
       print("No URLs found in the body.")
       
-  # Search for WordPress (case-insensitive, regardless of body size)
-  if "wordpress" in body.lower():
-    print("Found potential WordPress usage in the body.")
+  wordpress, info = is_wordpress(body)
+  print(f"Is wordpress: {wordpress}")  # Output: True
+  print(info)         # Output: {'version': '6.2.2'}
 
 
 def save_body(url, body, saveDir):
@@ -377,10 +465,11 @@ def analyze_url(artifact):
   if parsed_url.scheme == "https":
     port=parsed_url.port or 443
     #getssl(parsed_url.netloc,port)
-    subject, not_before, not_after = dissect_certificate(parsed_url.netloc,port)
-    print(f"Cert subject: {subject}")
-    print(f"Cert issued: {not_before}")
-    print(f"Cert expires: {not_after}")
+    #subject, not_before, not_after = 
+    dissect_certificate(parsed_url.netloc,port)
+    #print(f"Cert subject: {subject}")
+    #print(f"Cert issued: {not_before}")
+    #print(f"Cert expires: {not_after}")
   else:
     print(f"Skipping certificate check for non-HTTPS URL: {artifact}")
 
@@ -416,6 +505,8 @@ def analyze_ip(artifact):
   """Analyzes an IP address artifact."""
   print("=" * 40)
   print(f"Analyzing IP: {artifact}")
+  virustotal_domain_report(artifact,vt_api_key)
+  cyberGordon(artifact)
 
 
 # Check if there is at least one argument (script name itself doesn't count)
@@ -428,7 +519,7 @@ if len(sys.argv) > 1:
         """Analyzes the provided artifact based on its format."""
         if artifact.startswith("http") or artifact.startswith("https"):
             analyze_url(artifact)
-        elif is_ip(artifact):
+        elif is_valid_ip(artifact):
             analyze_ip(artifact)
         elif is_domain(artifact):
             analyze_domain(artifact)

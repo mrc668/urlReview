@@ -10,7 +10,7 @@ import socket
 
 import requests
 import pprint
-import urllib.parse
+import urllib3
 
 import ssl
 from cryptography import x509
@@ -213,6 +213,7 @@ def analyze_certificate(cert_data: bytes, host: str):
     except ValueError:
         print("Error: Invalid certificate data.")
 
+import urllib.parse
 def cyberGordon(artifact):
     """
     Processes an artifact (potentially a domain name) using a simulated interaction
@@ -352,7 +353,7 @@ def is_domain(artifact):
   return all(char.isalnum() or char == '.' for char in artifact)
 
 import requests
-from urllib.parse import urljoin
+#from urllib3.parse import urljoin
 import json
 
 def fetch_and_analyze_url(url):
@@ -367,13 +368,16 @@ def fetch_and_analyze_url(url):
     response.raise_for_status()  # Raise exception for non-2xx status codes
 
     # Successful response (2xx)
-    print("=" * 40)
-    print(f"Analyzing URL: {url} (Status Code: {response.status_code})")
     save_body(url, response.text, ".")
     analyze_body(response.status_code, response.text, session.cookies)
 
   except requests.exceptions.RequestException as e:
-    print(f"Error fetching URL: {url} - {e}")
+    if isinstance(e, urllib3.exceptions.TimeoutError):
+        print(f"Connection timed out for {url}. Retrying...")
+        # Implement retry logic with exponential backoff
+    else:
+        print(f"Error fetching URL: {url} - {e}")
+        # Log the error with details
 
   except requests.exceptions.HTTPError as e:
     # Analyze specific status codes
@@ -388,6 +392,8 @@ def fetch_and_analyze_url(url):
       print(f"Error fetching URL: {url} (Status Code: {status_code})")
       save_body(url, e.response.text)
       analyze_body(status_code, e.response.text)  # Optionally analyze error body
+
+
 
 import re
 
@@ -458,10 +464,15 @@ def analyze_url(artifact):
   parsed_url = urlparse(artifact)
   #artifacts.append(parsed_url.netloc)
   analyze_domain(parsed_url.netloc)
+  print("=" * 40)
   print(f"Analyzing URL: {artifact}")
   print(f"Proto: {parsed_url.scheme}")
   print(f"Host: {parsed_url.netloc}")
   print(f"Path: {parsed_url.path}")
+
+  cyberGordon(artifact)
+  fetch_and_analyze_url(artifact)
+
   if parsed_url.scheme == "https":
     port=parsed_url.port or 443
     #getssl(parsed_url.netloc,port)
@@ -472,9 +483,6 @@ def analyze_url(artifact):
     #print(f"Cert expires: {not_after}")
   else:
     print(f"Skipping certificate check for non-HTTPS URL: {artifact}")
-
-  cyberGordon(artifact)
-  fetch_and_analyze_url(artifact)
 
 def analyze_domain(artifact):
   """Analyzes a domain name artifact."""
@@ -487,7 +495,9 @@ def analyze_domain(artifact):
 
   try:
     addr = socket.gethostbyname(artifact)
-    artifacts.append(addr)
+    #for ip in addr:
+    #   analyze_ip(ip)
+    analyze_ip(addr)
   except socket.gaierror as e:
     print(f"Error resolving hostname: {e}")
     # Handle the error, e.g., return None, raise a custom exception, etc.

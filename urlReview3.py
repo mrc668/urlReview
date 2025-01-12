@@ -484,27 +484,38 @@ def analyze_url(artifact):
   else:
     print(f"Skipping certificate check for non-HTTPS URL: {artifact}")
 
+
+def dns_over_https(domain):
+  """
+  Performs a DNS lookup using Google's Public DNS over HTTPS.
+
+  Args:
+    domain: The domain name to look up.
+
+  Returns:
+    A list of IP addresses for the given domain, or None if the lookup fails.
+  """
+
+  url = f"https://dns.google/resolve?name={domain}&type=A"
+  try:
+    response = requests.get(url)
+    response.raise_for_status()  # Raise an exception for bad status codes
+
+    data = response.json()
+    if 'Answer' in data:
+      return [answer['data'] for answer in data['Answer']]
+    else:
+      return None
+  except requests.exceptions.RequestException as e:
+    print(f"Error making DNS request: {e}")
+    return None
+
+
 def analyze_domain(artifact):
   """Analyzes a domain name artifact."""
-  # Check for name server in .env
-  #name_server = os.getenv("nameServer")
-
-  #addr = socket.gethostbyname(artifact)
-  #artifacts.append(addr)
-  #analyze_ip(addr)
-
-  try:
-    addr = socket.gethostbyname(artifact)
-    #for ip in addr:
-    #   analyze_ip(ip)
+  ips = dns_over_https(artifact)
+  for addr in ips:
     analyze_ip(addr)
-  except socket.gaierror as e:
-    print(f"Error resolving hostname: {e}")
-    # Handle the error, e.g., return None, raise a custom exception, etc.
-  except Exception as e:
-    print(f"Unexpected error: {e}")
-    # Handle unexpected errors
-
 
   print("=" * 40)
   print(f"Analyzing Domain: {artifact}")
